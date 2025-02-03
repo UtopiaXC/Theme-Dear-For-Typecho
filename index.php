@@ -8,30 +8,45 @@
  * @version 1.1.0
  * @link https://yayu.net/
  */
-if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-$this->need('header.php'); ?>
-<?php if ($this->is('index')){ ?>
-<?php $this->widget('Widget_Contents_Page_List')->to($pages); ?>
-<?php while($pages->next()): ?>
-<?php if ($pages->slug == 'about'): ?> 
-<p><?php $pages->content(); ?></p><br />
-<?php endif; ?>
-<?php endwhile; ?>
-<h3>近期文章</h3>
-<p>
-<ul class="posts">
-<?php while ($this->next()) : ?>
-<li>
-<span><time datetime="<?php $this->date('c'); ?>" itemprop="datePublished"><?php $this->date(); ?></time></span>
-<div><?php $this->category(','); ?>&nbsp · &nbsp<a href="<?php $this->permalink() ?>"><?php $this->title() ?></a></div>
-</li>
-<?php endwhile; ?>
-</ul>
-</p>
-<?php } else { if ($this->is('single')) : ?>
-<h1><?php $this->title() ?></h1>
-<?php if ( $this->is('post') ) : ?><p><?php $this->category(','); ?> · <time datetime="<?php $this->date('c'); ?>" itemprop="datePublished"><?php $this->date(); ?></time></p><?php endif; ?>
-<div><?php $this->content(); ?></div>
-<?php if ( $this->is('post') ) : ?><p class="tags">#<?php $this->tags(' #', true, '无标签'); ?></p><?php endif; ?>
-<?php endif; } ?>
+if (!defined('__TYPECHO_ROOT_DIR__'))
+    exit;
+$this->need('header.php');
+require('config.php'); ?>
+<?php if ($this->is('index')) { ?>
+    <?php $this->widget('Widget_Contents_Page_List')->to($pages); ?>
+    <?php while ($pages->next()): ?>
+        <?php if ($subPageInIndex == "none")
+            break; ?>
+        <?php if ($pages->slug == $subPageInIndex): ?>
+            <p><?php $pages->content(); ?></p><br />
+        <?php endif; ?>
+    <?php endwhile; ?>
+    <h3>Articles</h3>
+    <p>
+    <ul class="posts">
+        <?php while ($this->next()): ?>
+            <li>
+                <span><time datetime="<?php $this->date('c'); ?>" itemprop="datePublished"><?php $this->date(); ?></time></span>
+                <div><?php if ($showCategoryInArticlesList) {
+                    $this->category(',');
+                    echo "&nbsp · &nbsp";
+                } ?><a
+                        href="<?php $this->permalink() ?>"><?php $this->title() ?></a></div>
+            </li>
+        <?php endwhile; ?>
+    </ul>
+    </p>
+    <?php $this->pageNav('&nbsp;←&nbsp;', '&nbsp;→&nbsp;', '3', '…'); ?>
+<?php } else {
+    if ($this->is('single')): ?>
+        <h1><?php $this->title() ?></h1>
+        <?php if ($this->is('post')): ?>
+            <p><?php $this->category(','); ?> · <time datetime="<?php $this->date('c'); ?>"
+                    itemprop="datePublished"><?php $this->date(); ?></time></p><?php endif; ?>
+        <div><?php $this->content(); ?></div>
+        <?php if ($this->is('post')): ?>
+            <p># <?php $this->tags(', ', true, '无标签'); ?></p>
+            <p><br /><?//php $this->need('comments.php'); ?></p><?php endif; ?>
+    <?php endif;
+} ?>
 <?php $this->need('footer.php'); ?>
