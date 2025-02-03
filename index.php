@@ -46,7 +46,7 @@ require('config.php'); ?>
         <div><?php $this->content(); ?></div>
         <?php if ($this->is('post')): ?>
             <p># <?php $this->tags(', ', true, '无标签'); ?></p>
-            <p><br /><?//php $this->need('comments.php'); ?></p><?php endif; ?>
+            <p><br /><?php if($enableComments){ $this->need('comments.php'); }?></p><?php endif; ?>
     <?php endif;
 } ?>
 <?php $this->need('footer.php'); ?>
