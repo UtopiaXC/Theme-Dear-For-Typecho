@@ -11,7 +11,7 @@ $this->need('config.php'); ?>
         <?php $this->archiveTitle(['category' => _t('%s'), 'search' => _t('搜索结果：%s'), 'tag' => _t('标签：%s'), 'author' => _t('作者：%s')], '', ' - '); ?><?php $this->options->title(); ?>
     </title>
     <?php $this->header(); ?>
-    <link rel="stylesheet" href="<?php $this->options->themeUrl('style.css'); ?>">
+    <link rel="stylesheet" href="<?php $this->options->themeUrl('./asset/css/style.css'); ?>">
 </head>
 
 <body>

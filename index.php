@@ -1,12 +1,14 @@
 <?php
 /**
- * Dear 是一款 WordPress & Typecho 纯文本极极简主题，样式复刻于 Bear Blog 示例主题。主题支持自定义背景、自定义菜单、自定义首页内容，支持黑暗模式和自适应；内置文章归档和搜索模板；已作中文字体优化，内置3种字体方案可选。主题无 JS、图片文件引用。<br/>
- * 发布页：<a href="https://yayu.net/projects/typecho-dear" target="_blank">https://yayu.net/projects/typecho-dear</a>
+ * 这是一款基于<a target="_blank" href="https://github.com/imjeff/typecho-dear">Dear</a>二次开发的极简纯文字风格Typecho主题。
+ * 支持评论、友情链接、自适应黑暗模式等功能。 
+ * 今天起，沉心写作。 <br/>
+ * 更多详情请访问GitHub：<a href="https://github.com/UtopiaXC/Theme-Dear-For-Typecho" target="_blank">https://github.com/UtopiaXC/Theme-Dear-For-Typecho</a>
  *
- * @package Dear
- * @author Jeff Chen
- * @version 1.1.0
- * @link https://yayu.net/
+ * @package Dear-For-Typecho
+ * @author Jeff Chen & UtopiaXC
+ * @version 2.0.0-alpha01
+ * @link https://github.com/UtopiaXC/Theme-Dear-For-Typecho
  */
 if (!defined('__TYPECHO_ROOT_DIR__'))
     exit;

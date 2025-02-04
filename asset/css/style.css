@@ -15,6 +15,7 @@
     --blockquote-color: #222;
     --gray-color: #999;
     --current-page-color: #88b6ff;
+    --image-background-color: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -30,6 +31,7 @@
         --gray-color: #999;
         --current-page-color: #a4d8ff;
         --comment-author-color: #606060;
+        --image-background-color: #c0c0c0;
     }
 }
 
@@ -268,7 +270,7 @@ ul.posts li a:visited {
     display: -moz-box;
     display: -ms-flexbox;
     display: -webkit-flex;
-    
+
     border-top: 1px solid #E1E1E1;
 }
 
@@ -289,7 +291,8 @@ ul.posts li a:visited {
     color: var(--code-color);
 }
 
-#comment-form .comment-buttons .left, #comment-form .comment-buttons .right {
+#comment-form .comment-buttons .left,
+#comment-form .comment-buttons .right {
     flex: 1;
     display: -webkit-box;
     display: -moz-box;
@@ -365,7 +368,8 @@ ul.posts li a:visited {
     font-size: 14px;
 }
 
-.comment_reply, .comment_meta {
+.comment_reply,
+.comment_meta {
     font-size: .766rem;
     color: #aaa;
 }
@@ -390,7 +394,8 @@ ul.posts li a:visited {
     text-align: right;
 }
 
-.comment_reply a:before, .comment_time:before {
+.comment_reply a:before,
+.comment_time:before {
     margin: 0 .5rem
 }
 
@@ -404,4 +409,70 @@ ul.posts li a:visited {
 
 .cancel-comment-reply {
     text-align: right;
+}
+
+.links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+.link-card-url {
+    text-decoration: none !important;
+    color: var(--comment-author-color);
+    display: inline-block !important;
+    box-shadow: none !important;
+}
+
+.link-card-avatar {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    padding: 2px;
+    margin-top: 20px !important;
+    margin-left: 14px !important;
+    background-color: var(--image-background-color);
+}
+
+.link-card {
+    overflow: auto;
+    height: 100px;
+    width: 300px;
+    display: inline-block !important;
+    border-radius: 5px;
+    background: none;
+}
+
+.link-card-left {
+    width: 92px;
+    float: left;
+    margin-right: -5px;
+}
+
+.link-card-right {
+    align-items: center;
+    overflow: hidden;
+    margin-top: 18px;
+    margin-right: 18px;
+}
+
+.link-card-title {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: 100%;
+    margin-bottom: 5px;
+    color: var(--code-color);
+}
+
+.link-card-description {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: 70%;
+    overflow: hidden;
+    flex-shrink: 0;
+    max-width: 100%;
+    color: var(--code-color);
 }
