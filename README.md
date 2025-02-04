@@ -25,6 +25,7 @@
 1. 请不要直接下载本项目源代码进行安装，请在正式版发布后在[release](https://github.com/UtopiaXC/Theme-Dear-For-Typecho/releases)中下载最新版本。  
 2. 如果您使用了源代码进行部署，需要将主题文件夹名更改为Dear-For-Typecho，并且建议将根目录下的demo文件夹删除，以削减服务器中存在的不必要的文件。  
 3. 友情链接功能强依赖于[Links](https://github.com/Mejituu/Links?tab=readme-ov-file)插件，请务必安装，否则友情链接无法正常显示。  
+4. MySQL8以后不再支持MyISAM引擎，因此使用MySQL8以上时开启Links插件报错HY000的话，请将`plugin/Links/Mysql.sql`中的MyISAM更改为InnoDB。  
 
 # Demo  
 ## 1. 主页  

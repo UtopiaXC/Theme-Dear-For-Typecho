@@ -5,15 +5,10 @@
  * @package custom
  */
 if (!defined('__TYPECHO_ROOT_DIR__'))
-    exit; 
-require("config.php");?>
-
-<div class="friend">
-
-
-</div>
+    exit;
+require("config.php"); ?>
 <?php $this->need('header.php'); ?>
-
+<div><?php $this->content(); ?></div>
 <?php
 try {
     $db = Typecho_Db::get();
@@ -21,6 +16,9 @@ try {
     @$links = $db->fetchAll($db->select()->from($prefix . 'links'));
     $types = [];
     foreach ($links as $link) {
+        if ($link['state'] == 0) {
+            continue;
+        }
         $type = $link['sort'];
         if ($type == '') {
             $type = $unGroupedLinksDefaultName;
@@ -30,21 +28,25 @@ try {
     $types = array_unique($types);
     sort($types);
     foreach ($types as $type) {
-        $target="";
-        if($openLinksInNewWindow){
+        $target = "";
+        if ($openLinksInNewWindow) {
             $target = "_blank";
-        }else{
+        } else {
             $target = "_self";
         }
-        echo '<h3># '.$type . '</h3><div class="links">';
+        echo '<h3># ' . $type . '</h3><div class="links">';
         foreach ($links as $link) {
+            if ($link['state'] == 0) {
+                continue;
+            }
             if ($link["sort"] == $type || ($type == $unGroupedLinksDefaultName && $link["sort"] == "")) {
                 echo '
-                <a target="'.$target.'" href="' . $link["url"] . '" title="' . $link["name"] . '" class="link-card-url">
+                <a target="' . $target . '" href="' . $link["url"] . '" title="' . $link["name"] . '" class="link-card-url">
           <div class="link-card">
             <div class="link-card-left">
-              <img class="link-card-avatar" src="' . $link["image"] . '" notFoundSrc="';$this->options->themeUrl($linkDefaultImg);
-              echo'">
+              <img class="link-card-avatar" src="' . $link["image"] . '" notFoundSrc="';
+                $this->options->themeUrl($linkDefaultImg);
+                echo '">
             </div>
             <div class="link-card-right">
               <div class="link-card-title">' . $link["name"] . '</div>

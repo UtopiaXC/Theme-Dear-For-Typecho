@@ -32,8 +32,7 @@ require('config.php'); ?>
                 <div><?php if ($showCategoryInArticlesList) {
                     $this->category(',');
                     echo "&nbsp · &nbsp";
-                } ?><a
-                        href="<?php $this->permalink() ?>"><?php $this->title() ?></a></div>
+                } ?><a href="<?php $this->permalink() ?>"><?php $this->title() ?></a></div>
             </li>
         <?php endwhile; ?>
     </ul>
@@ -47,8 +46,11 @@ require('config.php'); ?>
                     itemprop="datePublished"><?php $this->date(); ?></time></p><?php endif; ?>
         <div><?php $this->content(); ?></div>
         <?php if ($this->is('post')): ?>
-            <p># <?php $this->tags(', ', true, '无标签'); ?></p>
-            <p><br /><?php if($enableComments){ $this->need('comments.php'); }?></p><?php endif; ?>
+            <p># <?php $this->tags(', ', true, '无标签'); ?></p><?php endif; ?>
+            <p><br /><?php if ($enableComments) {
+                $this->need('comments.php');
+            } ?></p>
     <?php endif;
 } ?>
+
 <?php $this->need('footer.php'); ?>
