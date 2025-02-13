@@ -261,6 +261,7 @@ ul.posts li a:visited {
     background: var(--background-color);
     overflow: auto;
     color: var(--code-color);
+    padding: 5px;
 }
 
 #comment-form .comment-buttons {
@@ -475,4 +476,9 @@ ul.posts li a:visited {
     flex-shrink: 0;
     max-width: 100%;
     color: var(--code-color);
+}
+
+.tag_list .tag_item{
+    display: inline-block;
+    padding: 5px;
 }

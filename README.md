@@ -3,16 +3,17 @@
 原README请前往[原仓库](https://github.com/imjeff/typecho-dear)查看。  
 开源协议：CC BY-NC-SA 4.0 DEED（与原仓库相同）  
 
+我的博客兼Demo：[UtopiaXC Blog](https://blog.utopiaxc.cn/)  
+
 另外，评论功能UI大范围借鉴[Story-for-Typecho
 ](https://github.com/txperl/Story-for-Typecho)主题，在此表示十分感谢。  
 同时本项目也将也遵守其开源许可。  
 
-**_WIP_**
-
 # 新特性
 1. 重做评论系统  
 2. 添加自定义配置文件  
-3. 添加友链系统（需要配合[Links](https://github.com/Mejituu/Links?tab=readme-ov-file)插件使用）  
+3. 添加友链系统（需要配合[Links](https://github.com/Mejituu/Links?tab=readme-ov-file)插件使用） 
+4. 添加分类与标签模板 
    
 # 使用方法
 1. 安装  
@@ -28,6 +29,8 @@
 4. MySQL8以后不再支持MyISAM引擎，因此使用MySQL8以上时开启Links插件报错HY000的话，请将`plugin/Links/Mysql.sql`中的MyISAM更改为InnoDB。  
 
 # Demo  
+可以前往我的博客查看效果：[UtopiaXC Blog](https://blog.utopiaxc.cn/)
+
 ## 1. 主页  
 ![主页日间](./demo/index(day).png)  
 ![主页夜间](./demo/index(night).png)  

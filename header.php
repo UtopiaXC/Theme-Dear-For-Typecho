@@ -1,6 +1,6 @@
 <?php if (!defined('__TYPECHO_ROOT_DIR__'))
     exit;
-$this->need('config.php'); ?>
+require('config.php'); ?>
 <!DOCTYPE HTML>
 <html>
 
@@ -18,17 +18,52 @@ $this->need('config.php'); ?>
     <header>
         <?php $site_title_elem = $this->is('index') ? 'h1' : 'h2'; ?>
         <a class="title" href="<?php $this->options->siteUrl(); ?>"><<?php echo $site_title_elem; ?>><?php $this->options->title() ?></<?php echo $site_title_elem; ?>></a>
+        <?php if($isShowNavi): ?>
         <nav>
             <p>
+                <?php if($isShowHomeInNavi): ?>
                 <a<?php if ($this->is('index')): ?> class="current" <?php endif; ?>
                     href="<?php $this->options->siteUrl(); ?>"><?php _e('首页'); ?></a>
-                    <?php $this->widget('Widget_Contents_Page_List')->to($pages); ?>
-                    <?php while ($pages->next()): ?>
-                        <a<?php if ($this->is('page', $pages->slug)): ?> class="current" <?php endif; ?>
-                            href="<?php $pages->permalink(); ?>" title="<?php $pages->title(); ?>">
-                            <?php $pages->title(); ?></a>
-                        <?php endwhile; ?>
+                    <?php endif; ?>
+                    <?php
+                    $this->widget('Widget_Contents_Page_List')->to($pages);
+                    if ($isShowAllSlugInNavi) {
+                        while ($pages->next()) {
+                            $isCurrent = "";
+                            if ($this->is('page', $pages->slug)) {
+                                $isCurrent = 'class="current "';
+                            }
+                            echo '<a ' . $isCurrent . 'href=';
+                            $pages->permalink();
+                            echo ' title="';
+                            $pages->title();
+                            echo '">';
+                            $pages->title();
+                            echo '</a>';
+                        }
+                    } else {
+                        foreach ($slugInNavi as $slug) {
+                            while ($pages->next()) {
+                                if ($pages->slug == $slug) {
+                                    $isCurrent = "";
+                                    if ($this->is('page', $pages->slug)) {
+                                        $isCurrent = 'class="current "';
+                                    }
+                                    echo '<a ' . $isCurrent . 'href=';
+                                    $pages->permalink();
+                                    echo ' title="';
+                                    $pages->title();
+                                    echo '">';
+                                    $pages->title();
+                                    echo '</a>';
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                    ?>
             </p>
         </nav>
+        <?php endif; ?>
     </header>
     <main>

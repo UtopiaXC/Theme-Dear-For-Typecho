@@ -7,7 +7,7 @@
  *
  * @package Dear-For-Typecho
  * @author Jeff Chen & UtopiaXC
- * @version 2.0.0-alpha01
+ * @version 2.0.1
  * @link https://github.com/UtopiaXC/Theme-Dear-For-Typecho
  */
 if (!defined('__TYPECHO_ROOT_DIR__'))
@@ -23,7 +23,7 @@ require('config.php'); ?>
             <p><?php $pages->content(); ?></p><br />
         <?php endif; ?>
     <?php endwhile; ?>
-    <h3>Articles</h3>
+    <h3><?php echo $articlesTitle; ?></h3>
     <p>
     <ul class="posts">
         <?php while ($this->next()): ?>
@@ -37,7 +37,27 @@ require('config.php'); ?>
         <?php endwhile; ?>
     </ul>
     </p>
-    <?php $this->pageNav('&nbsp;←&nbsp;', '&nbsp;→&nbsp;', '3', '…'); ?>
+<?php } elseif ($this->is('category')||$this->is('tag')) { ?>
+    <h2><?php 
+    if ($this->is('category')){
+        echo "Category"; 
+    } elseif ($this->is('tag')){
+        echo "Tag"; 
+    }
+    $this->archiveTitle(); ?></h2>
+    <p>
+    <ul class="posts">
+        <?php while ($this->next()): ?>
+            <li>
+                <span><time datetime="<?php $this->date('c'); ?>" itemprop="datePublished"><?php $this->date(); ?></time></span>
+                <div><?php if ($showCategoryInArticlesList) {
+                    $this->category(',');
+                    echo "&nbsp · &nbsp";
+                } ?><a href="<?php $this->permalink() ?>"><?php $this->title() ?></a></div>
+            </li>
+        <?php endwhile; ?>
+    </ul>
+    </p>
 <?php } else {
     if ($this->is('single')): ?>
         <h1><?php $this->title() ?></h1>
@@ -47,10 +67,15 @@ require('config.php'); ?>
         <div><?php $this->content(); ?></div>
         <?php if ($this->is('post')): ?>
             <p># <?php $this->tags(', ', true, '无标签'); ?></p><?php endif; ?>
-            <p><br /><?php if ($enableComments) {
-                $this->need('comments.php');
-            } ?></p>
+        <p><br /><?php if ($enableComments) {
+            $this->need('comments.php');
+        } ?></p>
     <?php endif;
 } ?>
+<?php
+if ($this->is('index') || $this->is('category') || $this->is('tag')) {
+    $this->pageNav('&nbsp;←&nbsp;', '&nbsp;→&nbsp;', '3', '…');
+}
+?>
 
 <?php $this->need('footer.php'); ?>

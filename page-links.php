@@ -45,7 +45,11 @@ try {
           <div class="link-card">
             <div class="link-card-left">
               <img class="link-card-avatar" src="' . $link["image"] . '" notFoundSrc="';
+              if($isDefaultImgLocal){
                 $this->options->themeUrl($linkDefaultImg);
+              }else{
+                echo $linkDefaultImg;
+              } 
                 echo '">
             </div>
             <div class="link-card-right">
