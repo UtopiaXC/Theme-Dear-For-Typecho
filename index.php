@@ -1,13 +1,13 @@
 <?php
 /**
  * 这是一款基于<a target="_blank" href="https://github.com/imjeff/typecho-dear">Dear</a>二次开发的极简纯文字风格Typecho主题。
- * 支持评论、友情链接、自适应黑暗模式等功能。 
+ * 支持评论、友情链接、代码高亮、灯箱、自适应黑暗模式等功能。 
  * 今天起，沉心写作。 <br/>
  * 更多详情请访问GitHub：<a href="https://github.com/UtopiaXC/Theme-Dear-For-Typecho" target="_blank">https://github.com/UtopiaXC/Theme-Dear-For-Typecho</a>
  *
  * @package Dear-For-Typecho
  * @author Jeff Chen & UtopiaXC
- * @version 2.0.1
+ * @version 2.0.2
  * @link https://github.com/UtopiaXC/Theme-Dear-For-Typecho
  */
 if (!defined('__TYPECHO_ROOT_DIR__'))

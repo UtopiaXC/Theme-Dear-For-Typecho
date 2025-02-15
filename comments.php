@@ -44,6 +44,7 @@ function threadedComments($comments, $options)
     </li>
 <?php } ?>
 <div id="comments" class="gen">
+<link rel="stylesheet" href="<?php $this->options->themeUrl('./asset/css/comments.css'); ?>">
     <?php $this->comments()->to($comments); ?>
     <?php if ($this->allow('comment')): ?>
         <div id="<?php $this->respondId(); ?>" class="respond">
@@ -108,8 +109,8 @@ function threadedComments($comments, $options)
         <h3><?php $this->commentsNum(_t('暂无评论'), _t('仅有一条评论'), _t('已有 %d 条评论')); ?></h3>
 
         <?php $comments->listComments(); ?>
-
-        <?php $comments->pageNav('&laquo; 前一页', '后一页 &raquo;'); ?>
+        <br>
+        <?php $comments->pageNav('&nbsp;←&nbsp;', '&nbsp;→&nbsp;', '3', '…'); ?>
 
     <?php endif; ?>
 </div>

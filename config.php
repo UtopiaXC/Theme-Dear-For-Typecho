@@ -17,22 +17,23 @@ global $isShowHomeInNavi;
 global $articlesTitle;
 global $enableLightbox;
 global $rssUrl;
+global $enableHighlightjs;
 
 // 是否在文章列表中显示文章分类。
 // 可选属性：true与false
-$showCategoryInArticlesList = false;
+$showCategoryInArticlesList = true;
 
-// 文章列表每页包含条目数。
+// 文章列表每页包含条目数
 // 可选属性：整数
 $numArticleListContainsEachPage = 8;
 
-// 主页显示的嵌套独立页面类型。请填写独立页面的缩略名。"none"为不显示。
+// 主页显示的嵌套独立页面类型。请填写独立页面的缩略名。"none"为不显示
 // 可选属性：字符串，独立页面缩略名
-$subPageInIndex = "announcement";
+$subPageInIndex = "none";
 
 // 是否启用评论区。（与typecho设置无关，如果为否则加载任何页面时将完全不加载评论系统）
 // 可选属性：true与false
-$enableComments = true;
+$enableComments = false;
 
 // 是否启用评论时输入网址（用于减少广告）,如果设置为false，请将typecho设置中的评论需要填写网址选项关闭。
 // 可选属性：true与false
@@ -85,6 +86,11 @@ $enableLightbox = false;
 // 博客底部添加RSS订阅链接，如果为"none"则为不添加
 // 可选属性：字符串
 $rssUrl = "none";
+
+// 是否载入highlightjs代码高亮库
+// 需要切换主题请自行替换asset/css/highlightjs下的文件，显示语言和复制按钮的CSS在默认主题里面，替换主题时不要忘记一并将其复制粘贴过去。
+// 可选属性：true与false
+$enableHighlightjs = false;
 
 // 自定义CSS
 // 请将自定义CSS填写入asset/css/custom.css中

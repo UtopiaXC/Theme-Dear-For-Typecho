@@ -1,0 +1,65 @@
+.links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+.link-card-url {
+    text-decoration: none !important;
+    color: var(--comment-author-color);
+    display: inline-block !important;
+    box-shadow: none !important;
+}
+
+.link-card-avatar {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    padding: 2px;
+    margin-top: 20px !important;
+    margin-left: 14px !important;
+    background-color: var(--image-background-color);
+}
+
+.link-card {
+    overflow: auto;
+    height: 100px;
+    width: 300px;
+    display: inline-block !important;
+    border-radius: 5px;
+    background: none;
+}
+
+.link-card-left {
+    width: 92px;
+    float: left;
+    margin-right: -5px;
+}
+
+.link-card-right {
+    align-items: center;
+    overflow: hidden;
+    margin-top: 18px;
+    margin-right: 18px;
+}
+
+.link-card-title {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: 100%;
+    margin-bottom: 5px;
+    color: var(--code-color);
+}
+
+.link-card-description {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: 70%;
+    overflow: hidden;
+    flex-shrink: 0;
+    max-width: 100%;
+    color: var(--code-color);
+}
