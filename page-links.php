@@ -8,7 +8,7 @@ if (!defined('__TYPECHO_ROOT_DIR__'))
     exit;
 require("config.php"); ?>
 <?php $this->need('header.php'); ?>
-<link rel="stylesheet" href="<?php $this->options->themeUrl('./asset/css/comments.css'); ?>">
+<link rel="stylesheet" href="<?php $this->options->themeUrl('./asset/css/links.css'); ?>">
 <div><?php $this->content(); ?></div>
 <?php
 try {
