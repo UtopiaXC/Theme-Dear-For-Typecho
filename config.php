@@ -85,3 +85,9 @@ $enableLightbox = false;
 // 博客底部添加RSS订阅链接，如果为"none"则为不添加
 // 可选属性：字符串
 $rssUrl = "none";
+
+// 自定义CSS
+// 请将自定义CSS填写入asset/css/custom.css中
+
+// 自定义JS
+// 请将自定义JS填写入asset/js/custom.js中

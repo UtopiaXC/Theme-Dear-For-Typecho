@@ -7,11 +7,11 @@ require('config.php'); ?>
 <head>
     <meta charset="<?php $this->options->charset(); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>
-        <?php $this->archiveTitle(['category' => _t('%s'), 'search' => _t('搜索结果：%s'), 'tag' => _t('标签：%s'), 'author' => _t('作者：%s')], '', ' - '); ?><?php $this->options->title(); ?>
-    </title>
+    <title><?php $this->archiveTitle(['category' => _t('%s'), 'search' => _t('搜索结果：%s'), 'tag' => _t('标签：%s'), 'author' => _t('作者：%s')], '', ' - '); ?><?php $this->options->title(); ?></title>
     <?php $this->header(); ?>
     <link rel="stylesheet" href="<?php $this->options->themeUrl('./asset/css/style.css'); ?>">
+    <link rel="stylesheet" href="<?php $this->options->themeUrl('./asset/css/custom.css'); ?>">
+    <style><?php if(!empty($customCss)) echo $customCss; ?></style>
 </head>
 
 <body>
