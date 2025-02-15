@@ -37,12 +37,12 @@ require('config.php'); ?>
         <?php endwhile; ?>
     </ul>
     </p>
-<?php } elseif ($this->is('category')||$this->is('tag')) { ?>
-    <h2><?php 
-    if ($this->is('category')){
-        echo "Category"; 
-    } elseif ($this->is('tag')){
-        echo "Tag"; 
+<?php } elseif ($this->is('category') || $this->is('tag')) { ?>
+    <h2><?php
+    if ($this->is('category')) {
+        echo "Category";
+    } elseif ($this->is('tag')) {
+        echo "Tag";
     }
     $this->archiveTitle(); ?></h2>
     <p>
@@ -64,12 +64,19 @@ require('config.php'); ?>
         <?php if ($this->is('post')): ?>
             <p><?php $this->category(','); ?> · <time datetime="<?php $this->date('c'); ?>"
                     itemprop="datePublished"><?php $this->date(); ?></time></p><?php endif; ?>
-        <div><?php $this->content(); ?></div>
+        <div id="gallery"><?php $this->content(); ?></div>
         <?php if ($this->is('post')): ?>
             <p># <?php $this->tags(', ', true, '无标签'); ?></p><?php endif; ?>
         <p><br /><?php if ($enableComments) {
             $this->need('comments.php');
         } ?></p>
+        <?php if ($enableLightbox): ?>
+            <link href="<?php $this->options->themeUrl('/asset/css/viewer.min.css'); ?>" rel="stylesheet">
+            <script src="<?php $this->options->themeUrl('/asset/js/viewer.min.js'); ?>"></script>
+            <script>
+                const gallery = new Viewer(document.getElementById('gallery'));
+            </script>
+        <?php endif; ?>
     <?php endif;
 } ?>
 <?php

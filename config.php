@@ -15,6 +15,8 @@ global $slugInNavi;
 global $isShowNavi;
 global $isShowHomeInNavi;
 global $articlesTitle;
+global $enableLightbox;
+global $rssUrl;
 
 // 是否在文章列表中显示文章分类。
 // 可选属性：true与false
@@ -74,3 +76,12 @@ $slugInNavi = [];
 // 首页文章列表的标题
 // 可选属性：字符串
 $articlesTitle = "Articles";
+
+// 是否为文章载入viewer图片灯箱1.11.7，如果为false则不会引入任何新增js与css
+// https://github.com/fengyuanchen/viewerjs
+// 可选属性：true与false
+$enableLightbox = false;
+
+// 博客底部添加RSS订阅链接，如果为"none"则为不添加
+// 可选属性：字符串
+$rssUrl = "none";
