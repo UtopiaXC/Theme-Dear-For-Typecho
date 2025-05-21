@@ -5,8 +5,10 @@
 
 我的博客兼Demo：[UtopiaXC Blog](https://blog.utopiaxc.cn/)  
 
-另外，评论功能UI大范围借鉴[Story-for-Typecho
+评论功能UI大范围借鉴[Story-for-Typecho
 ](https://github.com/txperl/Story-for-Typecho)主题，在此表示十分感谢。同时本项目也将也遵守其开源许可。  
+
+自动检测渲染LaTeX功能参考文章《[为 Typecho 增加 LaTeX 公式的渲染](https://nwdan.com/tutorials/typecho-latex-support.html)》
 
 为维持与原主题一致性，新特性均需要手动在config中开启。目前需要手动修改config.php，较为麻烦，预期在下一版本中添加一个设置页面来简化修改流程。    
 
@@ -17,6 +19,7 @@
 4. 添加分类与标签模板  
 5. 添加viewerjs灯箱（默认关闭，需要在config中开启）  
 6. 添加highlightjs代码高亮（默认关闭，需要在config中开启）  
+7. 添加KaTeX作为LaTeX渲染引擎（发表文章时进行选择是否渲染）
 
 # 使用方法
 1. 安装  
