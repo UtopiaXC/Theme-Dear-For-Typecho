@@ -1,6 +1,12 @@
 <?php if (!defined('__TYPECHO_ROOT_DIR__'))
     exit;
-require('config.php'); ?>
+$enableHighlightjs = is_null($this->options->Dear_highlight) ? false : (bool)$this->options->Dear_highlight;
+$isShowNavi = is_null($this->options->Dear_showNavi) ? true : (bool)$this->options->Dear_showNavi;
+$isShowHomeInNavi = is_null($this->options->Dear_showHomeInNavi) ? true : (bool)$this->options->Dear_showHomeInNavi;
+$isShowAllSlugInNavi = is_null($this->options->Dear_showAllSlug) ? true : (bool)$this->options->Dear_showAllSlug;
+$rawSlug = is_null($this->options->Dear_slugInNavi) ? "" : $this->options->Dear_slugInNavi;
+$slugInNavi = empty(trim($rawSlug)) ? [] : array_map('trim', explode(',', $rawSlug));
+?>
 <!DOCTYPE HTML>
 <html>
 
@@ -23,6 +29,11 @@ require('config.php'); ?>
                 src="<?php $this->options->themeUrl('/asset/js/KaTeX/katex.min.js'); ?>"></script>
         <script defer type="text/javascript"
                 src="<?php $this->options->themeUrl('/asset/js/KaTeX/auto-render.min.js'); ?>"></script>
+    <?php endif; ?>
+    <?php if (!empty($this->options->Dear_customCss)): ?>
+        <style>
+            <?php echo $this->options->Dear_customCss; ?>
+        </style>
     <?php endif; ?>
 </head>
 

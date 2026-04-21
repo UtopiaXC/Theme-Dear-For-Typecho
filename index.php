@@ -2,33 +2,40 @@
 /**
  * 这是一款基于<a target="_blank" href="https://github.com/imjeff/typecho-dear">Dear</a>二次开发的极简纯文字风格Typecho主题。
  * 支持评论、友情链接、代码高亮、灯箱、自适应黑暗模式等功能。 
- * 今天起，沉心写作。 <br/>
+ * 今天起，沉心创作。 <br/>
  * 更多详情请访问GitHub：<a href="https://github.com/UtopiaXC/Theme-Dear-For-Typecho" target="_blank">https://github.com/UtopiaXC/Theme-Dear-For-Typecho</a>
  *
  * @package Dear-For-Typecho
  * @author Jeff Chen & UtopiaXC
- * @version 2.0.3
+ * @version 3.0.0
  * @link https://github.com/UtopiaXC/Theme-Dear-For-Typecho
  */
 if (!defined('__TYPECHO_ROOT_DIR__'))
     exit;
+
+$subPageInIndex = is_null($this->options->Dear_subPage) ? "none" : $this->options->Dear_subPage;
+$articlesTitle = is_null($this->options->Dear_articlesTitle) ? "Articles" : $this->options->Dear_articlesTitle;
+$showCategoryInArticlesList = is_null($this->options->Dear_showCategory) ? true : (bool) $this->options->Dear_showCategory;
+$enableComments = is_null($this->options->Dear_comments) ? false : (bool) $this->options->Dear_comments;
+$enableLightbox = is_null($this->options->Dear_lightbox) ? false : (bool) $this->options->Dear_lightbox;
+
 $this->need('header.php');
-require('config.php'); ?>
+?>
 <?php if ($this->is('index')) { ?>
     <?php if ($subPageInIndex != "none"): ?>
-        <?php 
+        <?php
         $db = \Typecho\Db::get();
         $pageRow = $db->fetchRow($db->select()->from('table.contents')
             ->where('type = ?', 'page')
             ->where('slug = ?', $subPageInIndex)
             ->limit(1));
-        
+
         if ($pageRow) {
             $announcement = \Typecho\Widget::widget('Widget_Contents_Page_List');
             $announcement->push($pageRow);
             echo '<p>' . $announcement->content . '</p><br />';
         }
-        ?>
+    ?>
     <?php endif; ?>
     <h3><?php echo $articlesTitle; ?></h3>
     <p>

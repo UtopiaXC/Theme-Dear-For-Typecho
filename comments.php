@@ -1,6 +1,9 @@
 <?php if (!defined('__TYPECHO_ROOT_DIR__'))
     exit;
-require('config.php'); ?>
+?>
+<?php
+$enableCommentUrl = is_null($this->options->Dear_commentUrl) ? true : (bool)$this->options->Dear_commentUrl;
+?>
 <?php
 //代码参考 Theme Quark http://sunhua.me/Quark.html
 function threadedComments($comments, $options)

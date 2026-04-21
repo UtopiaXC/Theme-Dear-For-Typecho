@@ -7,7 +7,7 @@
 
  if (!defined('__TYPECHO_ROOT_DIR__'))
  exit;
-require("config.php"); ?>
+?>
 <?php $this->need('header.php'); ?>
 <div><?php $this->content(); ?></div>
 <h1>» 分类</h1>

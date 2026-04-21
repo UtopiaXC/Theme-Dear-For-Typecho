@@ -6,7 +6,12 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__'))
     exit;
-require("config.php"); ?>
+
+$unGroupedLinksDefaultName = is_null($this->options->Dear_unGroupedLinks) ? "未分类" : $this->options->Dear_unGroupedLinks;
+$openLinksInNewWindow = is_null($this->options->Dear_newWindow) ? true : (bool)$this->options->Dear_newWindow;
+$linkDefaultImg = is_null($this->options->Dear_linkImg) ? "/asset/imgs/defaultLinkImg.svg" : $this->options->Dear_linkImg;
+$isDefaultImgLocal = is_null($this->options->Dear_linkImgLocal) ? true : (bool)$this->options->Dear_linkImgLocal;
+?>
 <?php $this->need('header.php'); ?>
 <link rel="stylesheet" href="<?php $this->options->themeUrl('./asset/css/links.css'); ?>">
 <?php

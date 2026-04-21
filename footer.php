@@ -1,6 +1,10 @@
 <?php if (!defined('__TYPECHO_ROOT_DIR__'))
     exit;
-require('config.php'); ?>
+?>
+<?php
+$rssUrl = is_null($this->options->Dear_rssUrl) ? "none" : $this->options->Dear_rssUrl;
+$enableHighlightjs = is_null($this->options->Dear_highlight) ? false : (bool)$this->options->Dear_highlight;
+?>
 </main>
 <footer>
     <p><a href="#">返回顶部 ↑</a></p>
@@ -14,8 +18,12 @@ require('config.php'); ?>
                 href="https://www.utopiaxc.cn/" target="_blank" title="UtopiaXC">UtopiaXC</a>.</span>
 </footer>
 <?php $this->footer(); ?>
+    <?php if (!empty($this->options->Dear_customJs)): ?>
+        <script>
+            <?php echo $this->options->Dear_customJs; ?>
+        </script>
+    <?php endif; ?>
 </body>
-<script src="<?php $this->options->themeUrl('/asset/js/custom.js'); ?>"></script>
 <?php if ($enableHighlightjs): ?>
     <script>
         const themeLink = document.getElementById("hljs-theme");
