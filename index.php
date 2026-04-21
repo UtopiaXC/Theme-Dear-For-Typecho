@@ -15,14 +15,21 @@ if (!defined('__TYPECHO_ROOT_DIR__'))
 $this->need('header.php');
 require('config.php'); ?>
 <?php if ($this->is('index')) { ?>
-    <?php $this->widget('Widget_Contents_Page_List')->to($pages); ?>
-    <?php while ($pages->next()): ?>
-        <?php if ($subPageInIndex == "none")
-            break; ?>
-        <?php if ($pages->slug == $subPageInIndex): ?>
-            <p><?php $pages->content(); ?></p><br />
-        <?php endif; ?>
-    <?php endwhile; ?>
+    <?php if ($subPageInIndex != "none"): ?>
+        <?php 
+        $db = \Typecho\Db::get();
+        $pageRow = $db->fetchRow($db->select()->from('table.contents')
+            ->where('type = ?', 'page')
+            ->where('slug = ?', $subPageInIndex)
+            ->limit(1));
+        
+        if ($pageRow) {
+            $announcement = \Typecho\Widget::widget('Widget_Contents_Page_List');
+            $announcement->push($pageRow);
+            echo '<p>' . $announcement->content . '</p><br />';
+        }
+        ?>
+    <?php endif; ?>
     <h3><?php echo $articlesTitle; ?></h3>
     <p>
     <ul class="posts">
