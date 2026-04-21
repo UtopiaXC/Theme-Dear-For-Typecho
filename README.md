@@ -15,7 +15,7 @@
 # 新特性
 1. 添加评论UI（默认关闭，需要在config中开启）  
 2. 添加自定义配置文件  
-3. 添加友链系统（需要配合[Links](https://github.com/Mejituu/Links?tab=readme-ov-file)插件使用，如果有不通过Links插件直接进行markdown内容解析的需求可以提issue，我会考虑添加该功能） 
+3. 添加友链系统
 4. 添加分类与标签模板  
 5. 添加viewerjs灯箱（默认关闭，需要在config中开启）  
 6. 添加highlightjs代码高亮（默认关闭，需要在config中开启）  
@@ -56,6 +56,34 @@
 - 友情链接：该页面将会显示您在Links插件中添加的友情链接。
 - 搜索：一个简单的搜索页面。
 
+## 友情链接使用方法  
+友情链接支持两种添加方式：Links插件与标签解析。这两种方式可以同时存在，按照先标签后Links的顺序来显示。
+### Links插件
+下载并启用[Links](https://github.com/Mejituu/Links?tab=readme-ov-file)插件，然后在后台添加友情链接。  
+注意，Links插件版本过老，可能和MySQL8数据库存在冲突，请自行修改Links插件中的数据库引擎来解决。详见下方注意章节。  
+### 标签解析
+在使用了友情链接模板的独立页面的内容中，任意位置添加以下标签
+```html
+<dear-links>
+
+</dear-links>
+```
+标签内部，需要一个JSON数组。数组中元素需要包含链接信息，格式如下：
+```json
+[
+    {
+        "type": "Search",
+        "name": "Google",
+        "url": "https://www.google.com/",
+        "description": "Google",
+        "image": "https://google.png",
+        "email": "google@google.com",
+        "display": true,
+    }
+]
+```
+如果条目中不包含某个字段，可以直接留空不写。  
+渲染时将按照type来进行分类整合。  
 # 注意  
 1. 请不要直接下载本项目源代码进行安装，请在正式版发布后在[release](https://github.com/UtopiaXC/Theme-Dear-For-Typecho/releases)中下载最新版本。  
 2. 如果您使用了源代码进行部署，需要将主题文件夹名更改为Dear-For-Typecho，并且建议将根目录下的demo文件夹删除，以削减服务器中存在的不必要的文件。  
