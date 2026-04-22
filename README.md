@@ -1,5 +1,6 @@
 # Theme-Dear-For-Typecho
 这是一款基于[Dear](https://github.com/imjeff/typecho-dear)修改而来的Typecho主题。  
+更多详情请查看[我的博客专题文章](https://blog.utopiaxc.cn/2026/04/theme3)
 原README请前往[原仓库](https://github.com/imjeff/typecho-dear)查看。  
 开源协议：CC BY-NC-SA 4.0 DEED（与原仓库相同）  
 
@@ -10,6 +11,8 @@
 
 自动检测渲染LaTeX功能参考文章《[为 Typecho 增加 LaTeX 公式的渲染](https://nwdan.com/tutorials/typecho-latex-support.html)》   
 
+目录功能参考文章《[Typecho 主题文章目录（TOC）实现](https://skywt.cn/blog/typecho-toc-practice)》  
+
 # 新特性
 1. 添加评论UI
 2. 添加自定义配置文件  
@@ -19,6 +22,7 @@
 6. 添加highlightjs代码高亮
 7. 添加KaTeX作为LaTeX渲染引擎（发表文章时进行选择是否渲染）
 8. 添加主题设置页面
+9. 添加目录
 
 # 使用方法
 1. 安装  
