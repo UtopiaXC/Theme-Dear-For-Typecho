@@ -23,6 +23,7 @@
 7. 添加KaTeX作为LaTeX渲染引擎（发表文章时进行选择是否渲染）
 8. 添加主题设置页面
 9. 添加目录
+10. 添加AI摘要功能
 
 # 使用方法
 1. 安装  
@@ -30,6 +31,7 @@
    b. 打开您的typecho管理后台，在控制台→外观中启用Dear-For-Typecho主题。
 2. 自定义  
    请在typecho管理后台中的控制台→外观→设置外观中修改可自定义的项目  
+3. 更多使用方法请参考博客文章《[Dear主题3版本正式发布](https://blog.utopiaxc.cn/2026/04/theme3)》。文章可能会实时更新，如果有内容变动请及时参考。  
 
 # 独立页面模板
 请在独立页面设置中选择对应的自定义模板，支持的模板如下：
@@ -59,7 +61,7 @@
         "description": "Google",
         "image": "https://google.png",
         "email": "google@google.com",
-        "display": true,
+        "display": true
     }
 ]
 ```
@@ -74,14 +76,14 @@
 6. 如果您从2.x升级到3.x或更高版本，请务必保存并备份现有的自定义css和js文件。从3.x版本开始，将不再支持从文件中读取自定义代码，如果希望使用自定义代码，请直接在主题设置中添加。  
 
 # Demo  
-可以前往我的博客查看效果：[UtopiaXC Blog](https://blog.utopiaxc.cn/)
-
+可以前往我的博客查看效果：[UtopiaXC Blog](https://blog.utopiaxc.cn/)  
+以下为部分效果截图：  
 ## 1. 主页  
 ![主页日间](./demo/index(day).png)  
 ![主页夜间](./demo/index(night).png)  
 ## 2. 文章页
 ![文章页日间](./demo/article(day).png)  
 ![文章页夜间](./demo/article(night).png)  
-## 3. 友情链接
-![友情链接日间](./demo/links(day).png)  
-![友情链接夜间](./demo/links(night).png)  
+
+## 3. 可设置项
+![设置项](./demo/settings.png)

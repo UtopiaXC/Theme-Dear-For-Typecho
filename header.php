@@ -31,6 +31,19 @@ if (!preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $bgColorDark)) {
     </title>
     <?php $this->header(); ?>
     <link rel="stylesheet" href="<?php $this->options->themeUrl('./asset/css/style.css'); ?>">
+    <?php
+    $isAiSummaryFeatureEnabled = false;
+    if ($this->is('post')) {
+        if (!is_null($this->options->Dear_aiEnabled)) {
+            if ($this->options->Dear_aiEnabled == '1') {
+                $isAiSummaryFeatureEnabled = true;
+            }
+        }
+    }
+    ?>
+    <?php if ($isAiSummaryFeatureEnabled): ?>
+        <link rel="stylesheet" href="<?php $this->options->themeUrl('./asset/css/ai-summary.css'); ?>">
+    <?php endif; ?>
     <?php if ($enableHighlightjs): ?>
         <link id="hljs-theme" rel="stylesheet"
             href="<?php $this->options->themeUrl('/asset/css/highlightjs/default.min.css'); ?>">

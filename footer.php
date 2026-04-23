@@ -395,12 +395,18 @@ $headingToggle = is_null($this->options->Dear_headingToggle) ? '0' : $this->opti
 <?php endif; ?>
 <?php
 $aiEnabledFooter = !is_null($this->options->Dear_aiEnabled) && $this->options->Dear_aiEnabled == '1';
+$aiDefaultHidden = !is_null($this->options->Dear_aiDefaultHidden) && $this->options->Dear_aiDefaultHidden == '1';
 if (($this->is('post')) && $aiEnabledFooter):
     ?>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script type="text/javascript">
         (function () {
             const box = document.getElementById("ai-summary-box");
             if (!box) return;
+            const defaultHidden = <?php echo $aiDefaultHidden ? 'true' : 'false'; ?>;
+            if (defaultHidden) {
+                box.style.display = "none";
+            }
 
             const cid = box.dataset.cid;
             const textEl = document.getElementById("ai-summary-text");
@@ -414,6 +420,9 @@ if (($this->is('post')) && $aiEnabledFooter):
             const modelCurrent = document.getElementById("ai-model-current");
             const modelDropdown = document.getElementById("ai-model-dropdown");
             const timeLabel = document.getElementById("ai-summary-time");
+            if (toggleBtn) {
+                toggleBtn.querySelector("span").textContent = (box.style.display === "none") ? "AI摘要" : "隐藏AI摘要";
+            }
 
             let currentSummary = "";
             let isExpanded = false;
@@ -426,13 +435,40 @@ if (($this->is('post')) && $aiEnabledFooter):
                 return u;
             }
 
-            function showBox() {
-                box.style.display = "block";
-                if (toggleBtn) toggleBtn.querySelector("span").textContent = "隐藏AI摘要";
+            function setStatus(msg, isError) {
+                textEl.textContent = msg;
+                textEl.style.color = isError ? "var(--gray-color)" : "";
+                contentEl.classList.remove("ai-summary-collapsed");
+                if (expandBtn) expandBtn.style.display = "none";
+                isExpanded = true;
             }
-            function hideBox() {
-                box.style.display = "none";
-                if (toggleBtn) toggleBtn.querySelector("span").textContent = "AI摘要";
+
+            function setSummary(text, model, updatedAt) {
+                currentSummary = text;
+                if (typeof marked !== 'undefined') {
+                    textEl.innerHTML = marked.parse(text);
+                } else {
+                    textEl.innerHTML = text;
+                }
+                textEl.style.color = "";
+                if (model) modelCurrent.textContent = model;
+                timeLabel.textContent = updatedAt ? "生成时间：" + formatTime(updatedAt) : "生成时间未知";
+
+                requestAnimationFrame(function () {
+                    const lineH = 22;
+                    if (contentEl.scrollHeight > lineH * 4) {
+                        contentEl.classList.add("ai-summary-collapsed");
+                        if (expandBtn) {
+                            expandBtn.style.display = "block";
+                            expandBtn.textContent = "展开全文 ▼";
+                        }
+                        isExpanded = false;
+                    } else {
+                        contentEl.classList.remove("ai-summary-collapsed");
+                        if (expandBtn) expandBtn.style.display = "none";
+                        isExpanded = true;
+                    }
+                });
             }
 
             function formatTime(ts) {
@@ -442,44 +478,8 @@ if (($this->is('post')) && $aiEnabledFooter):
                 return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
             }
 
-            function setStatus(msg, isError) {
-                textEl.textContent = msg;
-                textEl.style.color = isError ? "var(--gray-color)" : "";
-                contentEl.classList.remove("ai-summary-collapsed");
-                expandBtn.style.display = "none";
-                timeLabel.textContent = "生成时间未知";
-                isExpanded = true;
-            }
-
-            function setSummary(text, model, updatedAt) {
-                currentSummary = text;
-                textEl.textContent = text;
-                textEl.style.color = "";
-                if (model) modelCurrent.textContent = model;
-                timeLabel.textContent = updatedAt ? "生成时间：" + formatTime(updatedAt) : "生成时间未知";
-
-                requestAnimationFrame(function () {
-                    const lineH = parseFloat(getComputedStyle(textEl).lineHeight) || 20;
-                    if (textEl.scrollHeight > lineH * 2.5) {
-                        contentEl.classList.add("ai-summary-collapsed");
-                        expandBtn.style.display = "block";
-                        expandBtn.textContent = "展开全文 ▼";
-                        isExpanded = false;
-                    } else {
-                        contentEl.classList.remove("ai-summary-collapsed");
-                        expandBtn.style.display = "none";
-                        isExpanded = true;
-                    }
-                });
-            }
-
-            function currentModelName() {
-                return modelsList.length > 0 ? modelsList[selectedModelIndex].name : "";
-            }
-
             function fetchForModel(modelName, autoGenerate) {
                 setStatus("正在加载摘要...", false);
-                showBox();
                 fetch(api("get", "model_name=" + encodeURIComponent(modelName)))
                     .then(r => r.json())
                     .then(data => {
@@ -487,126 +487,117 @@ if (($this->is('post')) && $aiEnabledFooter):
                             if (data.status === "completed" && data.summary) {
                                 setSummary(data.summary, data.model, data.updated_at);
                             } else if (data.status === "generating") {
-                                setStatus("正在生成摘要，请稍候...", false);
+                                setStatus("摘要生成中...", false);
                                 setTimeout(() => pollStatus(modelName), 3000);
-                            } else if (data.status === "error") {
-                                setStatus("摘要生成失败: " + (data.error || "未知错误"), true);
                             } else if (autoGenerate) {
                                 generateSummary();
                             }
                         } else if (autoGenerate) {
                             generateSummary();
                         } else {
-                            setStatus("该模型暂无缓存摘要，点击重新生成", false);
+                            setStatus("暂无缓存，请点击重新生成", false);
                         }
                     })
-                    .catch(() => setStatus("网络错误", true));
+                    .catch(() => setStatus("网络请求失败", true));
             }
 
             function generateSummary() {
-                setStatus("正在请求 AI 生成摘要...", false);
+                setStatus("AI正在组织语言...", false);
                 fetch(api("generate", "model_index=" + selectedModelIndex))
                     .then(r => r.json())
                     .then(data => {
                         if (data.ok) {
                             if (data.status === "completed" && data.summary) {
                                 setSummary(data.summary, data.model, data.updated_at);
-                            } else if (data.status === "generating") {
-                                setStatus("该文章正在生成摘要，请稍候...", false);
-                                setTimeout(() => pollStatus(currentModelName()), 3000);
+                            } else {
+                                setTimeout(() => pollStatus(data.model_name), 3000);
                             }
                         } else {
-                            setStatus(data.error || "生成失败", true);
+                            setStatus(data.error || "请求失败", true);
                         }
                     })
-                    .catch(() => setStatus("网络错误", true));
+                    .catch(() => setStatus("请求超时或连接错误", true));
             }
 
             function pollStatus(modelName) {
                 fetch(api("get", "model_name=" + encodeURIComponent(modelName)))
                     .then(r => r.json())
                     .then(data => {
-                        if (data.ok && data.exists) {
-                            if (data.status === "completed" && data.summary) {
-                                setSummary(data.summary, data.model, data.updated_at);
-                            } else if (data.status === "generating") {
-                                setTimeout(() => pollStatus(modelName), 3000);
-                            } else if (data.status === "error") {
-                                setStatus("摘要生成失败: " + (data.error || ""), true);
-                            }
+                        if (data.ok && data.exists && data.status === "completed") {
+                            setSummary(data.summary, data.model, data.updated_at);
+                        } else if (data.status === "generating") {
+                            setTimeout(() => pollStatus(modelName), 3000);
                         }
                     });
             }
 
-            function renderDropdown() {
-                modelDropdown.innerHTML = "";
-                modelsList.forEach(function (m, i) {
-                    const item = document.createElement("div");
-                    item.className = "ai-model-dropdown-item" + (i === selectedModelIndex ? " active" : "");
-                    item.textContent = m.display;
-                    item.addEventListener("click", function (e) {
-                        e.stopPropagation();
-                        modelDropdown.style.display = "none";
-                        if (i === selectedModelIndex) return;
-                        selectedModelIndex = i;
-                        modelCurrent.textContent = m.display;
-                        fetchForModel(m.name, false);
-                    });
-                    modelDropdown.appendChild(item);
-                });
-            }
-
-            // 初始化：先加载模型列表
             fetch(api("models").replace("&cid=" + cid, ""))
                 .then(r => r.json())
                 .then(data => {
-                    if (data.ok && data.models && data.models.length > 0) {
+                    if (data.ok && data.models.length > 0) {
                         modelsList = data.models;
                         selectedModelIndex = 0;
                         modelCurrent.textContent = modelsList[0].display;
-                        renderDropdown();
                         fetchForModel(modelsList[0].name, true);
-                    } else {
-                        setStatus("未配置 AI 模型", true);
-                        showBox();
                     }
-                })
-                .catch(() => { setStatus("无法加载模型列表", true); showBox(); });
+                });
 
-            // 事件绑定
             if (toggleBtn) toggleBtn.addEventListener("click", function () {
-                box.style.display === "none" ? showBox() : hideBox();
+                if (box.style.display === "none") {
+                    box.style.display = "block";
+                    toggleBtn.querySelector("span").textContent = "隐藏AI摘要";
+                } else {
+                    box.style.display = "none";
+                    toggleBtn.querySelector("span").textContent = "AI摘要";
+                }
             });
-            if (closeBtn) closeBtn.addEventListener("click", hideBox);
+
+            if (closeBtn) closeBtn.addEventListener("click", () => {
+                box.style.display = "none";
+                if (toggleBtn) toggleBtn.querySelector("span").textContent = "AI摘要";
+            });
 
             if (expandBtn) expandBtn.addEventListener("click", function () {
                 if (isExpanded) {
                     contentEl.classList.add("ai-summary-collapsed");
                     expandBtn.textContent = "展开全文 ▼";
-                    isExpanded = false;
                 } else {
                     contentEl.classList.remove("ai-summary-collapsed");
                     expandBtn.textContent = "收起 ▲";
-                    isExpanded = true;
                 }
+                isExpanded = !isExpanded;
             });
 
-            if (copyBtn) copyBtn.addEventListener("click", function () {
-                if (currentSummary) navigator.clipboard.writeText(currentSummary).then(function () {
-                    copyBtn.title = "已复制!";
-                    setTimeout(function () { copyBtn.title = "复制摘要"; }, 2000);
-                });
-            });
+            const generationConfirmationModal = document.getElementById("ai-generation-confirmation-modal");
+            const confirmationCancelButton = document.getElementById("ai-generation-cancel-button");
+            const confirmationConfirmButton = document.getElementById("ai-generation-confirm-button");
 
-            if (regenBtn) regenBtn.addEventListener("click", generateSummary);
-
-            if (modelBtn) {
-                modelBtn.addEventListener("click", function (e) {
-                    e.stopPropagation();
-                    modelDropdown.style.display = modelDropdown.style.display === "none" ? "block" : "none";
+            if (regenBtn) {
+                regenBtn.addEventListener("click", function () {
+                    if (generationConfirmationModal) {
+                        generationConfirmationModal.style.display = "flex";
+                    }
                 });
             }
-            document.addEventListener("click", function () { modelDropdown.style.display = "none"; });
+
+            if (confirmationCancelButton) {
+                confirmationCancelButton.addEventListener("click", function () {
+                    generationConfirmationModal.style.display = "none";
+                });
+            }
+
+            if (confirmationConfirmButton) {
+                confirmationConfirmButton.addEventListener("click", function () {
+                    generationConfirmationModal.style.display = "none";
+                    generateSummary();
+                });
+            }
+
+            window.addEventListener("click", function (event) {
+                if (event.target === generationConfirmationModal) {
+                    generationConfirmationModal.style.display = "none";
+                }
+            });
         })();
     </script>
 <?php endif; ?>

@@ -31,14 +31,12 @@ class DearTheme_AiSummary
         $adapter = $db->getAdapterName();
         $isSQLite = stripos($adapter, 'SQLite') !== false;
 
-        // 检查新表结构是否已就绪
         try {
             $db->fetchRow($db->select('id', 'model_name')->from('table.dear_ai_summaries')->limit(1));
             self::$tableChecked = true;
             return;
         } catch (\Exception $e) {}
 
-        // 旧表是否存在
         $oldExists = false;
         try {
             $db->fetchRow($db->select('id')->from('table.dear_ai_summaries')->limit(1));
@@ -46,7 +44,6 @@ class DearTheme_AiSummary
         } catch (\Exception $e) {}
 
         if ($oldExists) {
-            // 尝试迁移：添加 model_name 列
             try {
                 if ($isSQLite) {
                     $db->query("ALTER TABLE \"{$pre}dear_ai_summaries\" ADD COLUMN \"model_name\" TEXT NOT NULL DEFAULT ''");
@@ -90,7 +87,6 @@ class DearTheme_AiSummary
             }
         }
 
-        // rate_log 表
         try {
             $db->fetchRow($db->select('id')->from('table.dear_ai_rate_log')->limit(1));
         } catch (\Exception $e) {
@@ -167,6 +163,8 @@ class DearTheme_AiSummary
         $db      = \Typecho\Db::get();
         $options = \Widget\Options::alloc();
 
+        $timeout = intval($options->Dear_aiTimeout ?: 15);
+
         if ($options->Dear_aiEnabled != '1') {
             self::error('AI 摘要功能已关闭', 403);
             return;
@@ -177,29 +175,28 @@ class DearTheme_AiSummary
         if (!isset($models[$modelIndex])) $modelIndex = 0;
         $model = $models[$modelIndex];
 
-        // 检查该 cid+model 是否正在生成
         $existing = $db->fetchRow(
             $db->select()->from('table.dear_ai_summaries')
                 ->where('cid = ?', $cid)->where('model_name = ?', $model['model_name'])
         );
+
         if ($existing && $existing['status'] === 'generating') {
-            self::success([
-                'exists' => true, 'status' => 'generating',
-                'summary' => '', 'model' => $model['model_display'],
-                'model_name' => $model['model_name'],
-                'message' => '该文章正在生成摘要，请稍候...'
-            ]);
-            return;
+            $elapsed = time() - intval($existing['updated_at']);
+            if ($elapsed < $timeout) {
+                self::success([
+                    'exists' => true, 'status' => 'generating',
+                    'summary' => '', 'model' => $model['model_display'],
+                    'model_name' => $model['model_name'],
+                    'message' => '该文章正在生成摘要，请稍候...'
+                ]);
+                return;
+            }
         }
 
-        // 速率限制
         $rateLimitResult = self::checkRateLimit($cid, $options);
         if ($rateLimitResult !== true) { self::error($rateLimitResult, 429); return; }
 
-        // 获取文章
-        $post = $db->fetchRow(
-            $db->select('cid', 'title', 'text')->from('table.contents')->where('cid = ?', $cid)
-        );
+        $post = $db->fetchRow($db->select('cid', 'title', 'text')->from('table.contents')->where('cid = ?', $cid));
         if (!$post) { self::error('文章不存在', 404); return; }
 
         $now = time();
@@ -220,16 +217,16 @@ class DearTheme_AiSummary
 
         $prompt = $options->Dear_aiPrompt;
         if (empty($prompt)) $prompt = self::defaultPrompt();
-
-        $articleText = preg_replace('/<!--.*?-->/s', '', $post['text']);
+        $articleText = preg_replace('//s', '', $post['text']);
         $userMessage = "文章标题：{$post['title']}\n\n文章正文：\n{$articleText}";
 
         try {
-            $result = self::callOpenAI($model, $prompt, $userMessage);
+            $result = self::callOpenAI($model, $prompt, $userMessage, $timeout);
             $db->query($db->update('table.dear_ai_summaries')->rows([
                 'summary' => $result, 'model_display_name' => $model['model_display'],
                 'status' => 'completed', 'error_message' => '', 'updated_at' => time()
             ])->where('cid = ?', $cid)->where('model_name = ?', $model['model_name']));
+
             self::success([
                 'exists' => true, 'summary' => $result, 'model' => $model['model_display'],
                 'model_name' => $model['model_name'], 'status' => 'completed', 'updated_at' => time()
@@ -240,6 +237,47 @@ class DearTheme_AiSummary
             ])->where('cid = ?', $cid)->where('model_name = ?', $model['model_name']));
             self::error('AI 请求失败: ' . $e->getMessage(), 502);
         }
+    }
+
+    private static function callOpenAI($model, $systemPrompt, $userMessage, $timeout = 15)
+    {
+        $url = rtrim($model['api_url'], '/');
+        if (!preg_match('/\/chat\/completions\/?$/', $url)) $url .= '/chat/completions';
+
+        $payload = json_encode([
+            'model'    => $model['model_name'],
+            'messages' => [['role' => 'system', 'content' => $systemPrompt], ['role' => 'user', 'content' => $userMessage]],
+            'temperature' => 0.6
+        ], JSON_UNESCAPED_UNICODE);
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Authorization: Bearer ' . $model['api_key']],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => $timeout,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_SSL_VERIFYPEER => false
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($response === false) throw new \Exception('连接超时或错误: ' . $curlErr);
+
+        $data = json_decode($response, true);
+        if ($httpCode !== 200) {
+            $errMsg = isset($data['error']['message']) ? $data['error']['message'] : '接口返回错误 ' . $httpCode;
+            throw new \Exception($errMsg);
+        }
+
+        if (isset($data['choices'][0]['message']['content'])) {
+            return trim($data['choices'][0]['message']['content']);
+        }
+        throw new \Exception('AI 未返回有效内容');
     }
 
     private static function checkRateLimit($cid, $options)
@@ -268,55 +306,6 @@ class DearTheme_AiSummary
         return true;
     }
 
-    private static function callOpenAI($model, $systemPrompt, $userMessage)
-    {
-        $url = rtrim($model['api_url'], '/');
-        if (!preg_match('/\/chat\/completions\/?$/', $url)) {
-            $url .= '/chat/completions';
-        }
-
-        $payload = json_encode([
-            'model'    => $model['model_name'],
-            'messages' => [
-                ['role' => 'system', 'content' => $systemPrompt],
-                ['role' => 'user',   'content' => $userMessage]
-            ],
-            'max_tokens'  => 4096,
-            'temperature' => 0.5
-        ], JSON_UNESCAPED_UNICODE);
-
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $payload,
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Authorization: Bearer ' . $model['api_key']],
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 180,
-            CURLOPT_CONNECTTIMEOUT => 15,
-            CURLOPT_SSL_VERIFYPEER => false
-        ]);
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlErr  = curl_error($ch);
-        curl_close($ch);
-
-        if ($response === false) throw new \Exception('cURL: ' . $curlErr);
-
-        $data = json_decode($response, true);
-        if ($httpCode !== 200) {
-            $errMsg = isset($data['error']['message']) ? $data['error']['message'] : substr($response, 0, 500);
-            throw new \Exception("HTTP {$httpCode}: {$errMsg}");
-        }
-
-        if (isset($data['choices'][0]['message']['content'])) {
-            $content = trim($data['choices'][0]['message']['content']);
-            if (empty($content)) throw new \Exception('AI 返回了空内容');
-            return $content;
-        }
-
-        throw new \Exception('Unexpected response: ' . substr($response, 0, 300));
-    }
 
     private static function parseModels($json)
     {
@@ -340,11 +329,10 @@ class DearTheme_AiSummary
     public static function defaultPrompt()
     {
         return '你是一个专业的文章摘要生成助手。请根据提供的文章内容生成一段简洁的中文摘要。要求：
-1. 摘要长度严格控制在100-200字之间
-2. 准确概括文章的核心内容和关键要点
+1. 摘要长度最好控制在500字以内，如果能在小于500字的情况就将全文描述清楚的话，那字数越少越好，如果文章实在太长可适当放开限制，但是一定要尽可能控制
+2. 准确概括文章的核心内容和关键要点，并且一定要完整
 3. 使用流畅自然的中文表达
-4. 直接描述主题和核心观点，不要使用"本文"、"该文章"等指代词
-5. 不要输出任何多余内容，只输出摘要正文本身';
+4. 可以用介绍的口吻来介绍本篇文章的内容，但是要尽量完整并保留文章原滋原味';
     }
 
     private static function success($data) {

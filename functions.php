@@ -261,11 +261,17 @@ function themeConfig($form)
     $Dear_unGroupedLinks = new Typecho_Widget_Helper_Form_Element_Text('Dear_unGroupedLinks', NULL, '未分类', _t('默认友情链接分组名'), _t('如果没有正确指定type的友链将被统一放置到此名称下'));
     $form->addInput($Dear_unGroupedLinks);
 
-    $Dear_aiEnabled = new Typecho_Widget_Helper_Form_Element_Radio('Dear_aiEnabled', array('1' => _t('启用'), '0' => _t('关闭')), '0', _t('<div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 35px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">AI 摘要</div>启用 AI 摘要'), _t('开启后文章阅读页会显示 AI 生成的摘要'));
+    $Dear_aiEnabled = new Typecho_Widget_Helper_Form_Element_Radio('Dear_aiEnabled', array('1' => _t('启用'), '0' => _t('关闭')), '0', _t('<div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 35px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">AI 摘要</div>启用 AI 摘要'), _t(''));
     $form->addInput($Dear_aiEnabled);
 
+    $Dear_aiDefaultHidden = new Typecho_Widget_Helper_Form_Element_Radio('Dear_aiDefaultHidden', array('1' => _t('是'), '0' => _t('否')), '0', _t('默认隐藏AI摘要内容卡片'), _t('如果选择隐藏，页面加载时摘要卡片初始不显示，点击文章标题旁的按钮后才会弹出'));
+    $form->addInput($Dear_aiDefaultHidden);
+
+    $Dear_aiTimeout = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiTimeout', NULL, '60', _t('请求超时时间限制（秒）'), _t('用来防止队列中请求异常中止但是状态机没有改变的情况。推荐根据网络环境与模型Token吐出速度设置在60秒以上。'));
+    $form->addInput($Dear_aiTimeout);
+
     $defaultModels = json_encode([['api_url' => '', 'api_key' => '', 'model_display' => '', 'model_name' => '']], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-    $Dear_aiModels = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_aiModels', NULL, $defaultModels, _t('AI 模型配置（JSON）'), _t('使用 JSON 数组格式配置一个或多个模型。每个模型需包含 api_url、api_key、model_display（显示名）和 model_name（请求用名称）。可以配置多个模型，用户可在前端切换。'));
+    $Dear_aiModels = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_aiModels', NULL, $defaultModels, _t('AI模型配置'), _t('采用标准的OpenAI API格式。每个模型需包含api_url、api_key和model_name。此外，还需要配置一个model_display用来在前端显示。可以配置多个模型，用户可在前端切换。模型1将会被设置为默认模型'));
     $form->addInput($Dear_aiModels);
 
     $Dear_aiModelsUi = new Typecho_Widget_Helper_Layout('div');
@@ -296,9 +302,9 @@ function themeConfig($form)
                 card.innerHTML = \'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong>模型 #\' + (i+1) + \'</strong><button type="button" class="del-model" data-idx="\' + i + \'" style="background:#e74c3c;color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;">删除</button></div>\'
                     + \'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">\'
                     + \'<label style="font-size:12px;color:#666;">API URL<input type="text" class="ai-field" data-idx="\' + i + \'" data-key="api_url" value="\' + (m.api_url||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
-                    + \'<label style="font-size:12px;color:#666;">API Key<input type="text" class="ai-field" data-idx="\' + i + \'" data-key="api_key" value="\' + (m.api_key||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
-                    + \'<label style="font-size:12px;color:#666;">显示名称<input type="text" class="ai-field" data-idx="\' + i + \'" data-key="model_display" value="\' + (m.model_display||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
-                    + \'<label style="font-size:12px;color:#666;">模型名称（请求用）<input type="text" class="ai-field" data-idx="\' + i + \'" data-key="model_name" value="\' + (m.model_name||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
+                    + \'<label style="font-size:12px;color:#666;">API Key<input type="password" class="ai-field" data-idx="\' + i + \'" data-key="api_key" value="\' + (m.api_key||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
+                    + \'<label style="font-size:12px;color:#666;">模型调用名称<input type="text" class="ai-field" data-idx="\' + i + \'" data-key="model_name" value="\' + (m.model_name||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
+                    + \'<label style="font-size:12px;color:#666;">模型显示名称<input type="text" class="ai-field" data-idx="\' + i + \'" data-key="model_display" value="\' + (m.model_display||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
                     + \'</div>\';
                 uiContainer.appendChild(card);
             });
@@ -348,24 +354,129 @@ function themeConfig($form)
     $form->addItem($Dear_aiModelsUi);
 
     require_once dirname(__FILE__) . '/asset/php/ai-summary-handler.php';
-    $Dear_aiPrompt = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_aiPrompt', NULL, DearTheme_AiSummary::defaultPrompt(), _t('AI 摘要 Prompt'), _t('自定义发送给 AI 的系统提示词，用于控制摘要的风格与长度'));
+    $Dear_aiPrompt = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_aiPrompt', NULL, DearTheme_AiSummary::defaultPrompt(), _t('提示词Prompt'), _t('自定义系统提示词，用于控制摘要的风格与长度'));
     $form->addInput($Dear_aiPrompt);
 
-    $Dear_aiGlobalRateMinutes = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiGlobalRateMinutes', NULL, '60', _t('全局速率限制 - 时间窗口（分钟）'), _t(''));
+    $Dear_aiGlobalRateMinutes = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiGlobalRateMinutes', NULL, '60', _t('全局速率限制 时间窗口（分钟）'), _t(''));
     $form->addInput($Dear_aiGlobalRateMinutes);
 
-    $Dear_aiGlobalRateMax = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiGlobalRateMax', NULL, '1000', _t('全局速率限制 - 最大请求次数'), _t('在上面设定的时间窗口内，所有文章合计最多允许请求的次数'));
+    $Dear_aiGlobalRateMax = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiGlobalRateMax', NULL, '1000', _t('全局速率限制 每时间窗口内最大请求次数'), _t('在上面设定的时间窗口内，所有文章合计最多允许请求的次数，即每多少分钟最多多少次请求。'));
     $form->addInput($Dear_aiGlobalRateMax);
 
-    $Dear_aiArticleRateMinutes = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiArticleRateMinutes', NULL, '1', _t('单文章速率限制 - 时间窗口（分钟）'), _t(''));
+    $Dear_aiArticleRateMinutes = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiArticleRateMinutes', NULL, '1', _t('单文章速率限制 时间窗口（分钟）'), _t(''));
     $form->addInput($Dear_aiArticleRateMinutes);
 
-    $Dear_aiArticleRateMax = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiArticleRateMax', NULL, '5', _t('单文章速率限制 - 最大请求次数'), _t('在上面设定的时间窗口内，单篇文章最多允许请求的次数'));
+    $Dear_aiArticleRateMax = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiArticleRateMax', NULL, '5', _t('单文章速率限制 每时间窗口内最大请求次数'), _t('在上面设定的时间窗口内，单篇文章最多允许请求的次数，即每多少分钟最多多少次请求。'));
     $form->addInput($Dear_aiArticleRateMax);
 
-    $Dear_customCss = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_customCss', NULL, '', _t('<div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 35px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">高级自定义</div>自定义CSS'), _t('在这里填入自定义CSS代码，直接写入CSS即可，主题会自动加上&lt;style&gt;标签'));
+    $Dear_customCss = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_customCss', NULL, '', _t('<div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 35px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">自定义</div>自定义CSS'), _t('在这里填入自定义CSS代码，直接写入CSS即可，主题会自动加上&lt;style&gt;标签'));
     $form->addInput($Dear_customCss);
 
     $Dear_customJs = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_customJs', NULL, '', _t('自定义JS'), _t('在这里填入自定义JS代码（如访问统计等），直接写入JS即可，主题会自动加上&lt;script&gt;标签'));
     $form->addInput($Dear_customJs);
+
+    // 配置备份与恢复
+    $Dear_backupUi = new Typecho_Widget_Helper_Layout('div');
+    $Dear_backupUi->html('
+    <div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 35px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">备份与恢复</div>
+    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+        <button type="button" id="dear-export-btn" style="background:#467b96;color:#fff;border:none;border-radius:4px;padding:8px 16px;cursor:pointer;font-size:14px;">导出当前配置 (JSON)</button>
+        <button type="button" id="dear-import-btn" style="background:#e67e22;color:#fff;border:none;border-radius:4px;padding:8px 16px;cursor:pointer;font-size:14px;">导入配置 (JSON)</button>
+        <input type="file" id="dear-import-file" accept=".json" style="display:none;">
+    </div>
+    
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const exportBtn = document.getElementById("dear-export-btn");
+        const importBtn = document.getElementById("dear-import-btn");
+        const importFile = document.getElementById("dear-import-file");
+        const form = document.querySelector("form");
+
+        if (!form || !exportBtn || !importBtn) return;
+
+        // --- 导出逻辑 ---
+        exportBtn.addEventListener("click", function() {
+            let config = {};
+            // 抓取所有设置项 (以 Dear_ 开头)
+            const inputs = form.querySelectorAll("input[name^=\'Dear_\'], textarea[name^=\'Dear_\'], select[name^=\'Dear_\']");
+            
+            inputs.forEach(el => {
+                const name = el.name;
+                if (el.type === "radio" || el.type === "checkbox") {
+                    if (el.checked) config[name] = el.value;
+                } else {
+                    config[name] = el.value;
+                }
+            });
+            const dataStr = JSON.stringify(config, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement("a");
+            a.href = url;
+            const date = new Date();
+            const dateStr = date.getFullYear() + "-" + 
+                           String(date.getMonth() + 1).padStart(2, "0") + "-" + 
+                           String(date.getDate()).padStart(2, "0");
+            a.download = "dear_theme_config_" + dateStr + ".json";
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+        importBtn.addEventListener("click", function() {
+            if(confirm("警告：导入配置将覆盖当前表单中的所有内容，并在导入完成后自动保存刷新。\\n\\n是否继续导入？")) {
+                importFile.click();
+            }
+        });
+
+        importFile.addEventListener("change", function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const config = JSON.parse(e.target.result);
+                    let importedCount = 0;
+                    
+                    for (const key in config) {
+                        const value = config[key];
+                        const inputs = form.querySelectorAll(`[name="${key}"]`);
+                        if (inputs.length === 0) continue;
+
+                        inputs.forEach(el => {
+                            if (el.type === "radio" || el.type === "checkbox") {
+                                el.checked = (el.value === value);
+                            } else {
+                                el.value = value;
+                            }
+                        });
+                        importedCount++;
+                    }
+
+                    if (importedCount > 0) {
+                        alert("成功导入 " + importedCount + " 项配置！即将自动保存并刷新...");
+                        const submitBtn = form.querySelector("button[type=\'submit\']");
+                        if (submitBtn) {
+                            submitBtn.click();
+                        } else {
+                            form.submit();
+                        }
+                    } else {
+                        alert("未能从文件中识别到有效的配置项，请检查JSON文件来源。");
+                    }
+                } catch (err) {
+                    alert("导入失败：文件格式错误或并非有效的 JSON 文件！");
+                    console.error("JSON Parsing Error:", err);
+                }
+                importFile.value = "";
+            };
+            reader.readAsText(file);
+        });
+    });
+    </script>
+    ');
+    $form->addItem($Dear_backupUi);
 }
