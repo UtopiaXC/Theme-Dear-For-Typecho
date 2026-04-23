@@ -166,12 +166,12 @@ class DearTheme_AiSummary
         $timeout = intval($options->Dear_aiTimeout ?: 15);
 
         if ($options->Dear_aiEnabled != '1') {
-            self::error('AI 摘要功能已关闭', 403);
+            self::error('AI摘要功能已关闭', 403);
             return;
         }
 
         $models = self::parseModels($options->Dear_aiModels);
-        if (empty($models)) { self::error('未配置 AI 模型', 400); return; }
+        if (empty($models)) { self::error('未配置AI模型', 400); return; }
         if (!isset($models[$modelIndex])) $modelIndex = 0;
         $model = $models[$modelIndex];
 
@@ -235,7 +235,7 @@ class DearTheme_AiSummary
             $db->query($db->update('table.dear_ai_summaries')->rows([
                 'status' => 'error', 'error_message' => $e->getMessage(), 'updated_at' => time()
             ])->where('cid = ?', $cid)->where('model_name = ?', $model['model_name']));
-            self::error('AI 请求失败: ' . $e->getMessage(), 502);
+            self::error('AI请求失败: ' . $e->getMessage(), 502);
         }
     }
 
@@ -254,7 +254,11 @@ class DearTheme_AiSummary
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $payload,
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Authorization: Bearer ' . $model['api_key']],
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $model['api_key'],
+                'Expect:'
+            ],
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => $timeout,
             CURLOPT_CONNECTTIMEOUT => 5,

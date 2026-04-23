@@ -398,7 +398,7 @@ $aiEnabledFooter = !is_null($this->options->Dear_aiEnabled) && $this->options->D
 $aiDefaultHidden = !is_null($this->options->Dear_aiDefaultHidden) && $this->options->Dear_aiDefaultHidden == '1';
 if (($this->is('post')) && $aiEnabledFooter):
     ?>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="<?php $this->options->themeUrl('./asset/js/marked.min.js'); ?>"></script>
     <script type="text/javascript">
         (function () {
             const box = document.getElementById("ai-summary-box");
@@ -501,6 +501,35 @@ if (($this->is('post')) && $aiEnabledFooter):
                     .catch(() => setStatus("网络请求失败", true));
             }
 
+            function renderDropdown() {
+                if (!modelDropdown) {
+                    return;
+                }
+                modelDropdown.innerHTML = "";
+                modelsList.forEach(function (modelItem, index) {
+                    const dropdownItem = document.createElement("div");
+                    let classNameString = "ai-model-dropdown-item";
+                    if (index === selectedModelIndex) {
+                        classNameString += " active";
+                    }
+                    dropdownItem.className = classNameString;
+                    dropdownItem.textContent = modelItem.display;
+
+                    dropdownItem.addEventListener("click", function (event) {
+                        event.stopPropagation();
+                        modelDropdown.style.display = "none";
+                        if (index === selectedModelIndex) {
+                            return;
+                        }
+                        selectedModelIndex = index;
+                        modelCurrent.textContent = modelItem.display;
+                        fetchForModel(modelItem.name, false);
+                    });
+
+                    modelDropdown.appendChild(dropdownItem);
+                });
+            }
+
             function generateSummary() {
                 setStatus("AI正在组织语言...", false);
                 fetch(api("generate", "model_index=" + selectedModelIndex))
@@ -532,12 +561,15 @@ if (($this->is('post')) && $aiEnabledFooter):
             }
 
             fetch(api("models").replace("&cid=" + cid, ""))
-                .then(r => r.json())
-                .then(data => {
-                    if (data.ok && data.models.length > 0) {
-                        modelsList = data.models;
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (responseData) {
+                    if (responseData.ok && responseData.models && responseData.models.length > 0) {
+                        modelsList = responseData.models;
                         selectedModelIndex = 0;
                         modelCurrent.textContent = modelsList[0].display;
+                        renderDropdown();
                         fetchForModel(modelsList[0].name, true);
                     }
                 });
@@ -598,6 +630,36 @@ if (($this->is('post')) && $aiEnabledFooter):
                     generationConfirmationModal.style.display = "none";
                 }
             });
+
+            if (copyBtn) {
+                copyBtn.addEventListener("click", function () {
+                    if (currentSummary) {
+                        navigator.clipboard.writeText(currentSummary).then(() => {
+                            const oldTitle = copyBtn.title;
+                            copyBtn.title = "已复制!";
+                            setTimeout(() => { copyBtn.title = oldTitle; }, 2000);
+                        });
+                    }
+                });
+            }
+
+            if (modelBtn) {
+                modelBtn.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    if (modelDropdown) {
+                        modelDropdown.style.display = modelDropdown.style.display === "none" ? "block" : "none";
+                    }
+                });
+            }
+
+            document.addEventListener("click", function () {
+                if (modelDropdown) {
+                    modelDropdown.style.display = "none";
+                }
+            });
+
+        })();
+    </script>
         })();
     </script>
 <?php endif; ?>

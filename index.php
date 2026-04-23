@@ -7,7 +7,7 @@
  *
  * @package Dear-For-Typecho
  * @author Jeff Chen & UtopiaXC
- * @version 3.2.0
+ * @version 3.2.1
  * @link https://github.com/UtopiaXC/Theme-Dear-For-Typecho
  */
 if (!defined('__TYPECHO_ROOT_DIR__'))
