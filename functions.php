@@ -174,7 +174,7 @@ function themeConfig($form)
     </script>
     ');
     $form->addItem($Dear_adminUi);
-    $Dear_showCategory = new Typecho_Widget_Helper_Form_Element_Radio('Dear_showCategory', array('1' => _t('显示'), '0' => _t('隐藏')), '0', _t('<div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 15px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">通用与阅读</div>是否在文章列表中显示文章分类'), _t('文章列表中是否在最前面显示分类名称'));
+    $Dear_showCategory = new Typecho_Widget_Helper_Form_Element_Radio('Dear_showCategory', array('1' => _t('显示'), '0' => _t('隐藏')), '0', _t('<div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 15px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">通用与外观</div>是否在文章列表中显示文章分类'), _t('文章列表中是否在最前面显示分类名称'));
     $form->addInput($Dear_showCategory);
 
     $Dear_themeModeBtn = new Typecho_Widget_Helper_Form_Element_Radio('Dear_themeModeBtn', array('1' => _t('显示'), '0' => _t('隐藏')), '1', _t('右上角显示深浅色模式切换开关'), _t('支持跟随系统、浅色、深色之间循环切换'));
@@ -213,11 +213,17 @@ function themeConfig($form)
     $Dear_customNavi = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_customNavi', NULL, '', _t('自定义导航链接'), _t('在这里填入自定义的一个或多个&lt;a&gt;标签，渲染时将直接按照原样输出到导航栏的末尾。'));
     $form->addInput($Dear_customNavi);
 
-    $Dear_lightbox = new Typecho_Widget_Helper_Form_Element_Radio('Dear_lightbox', array('1' => _t('启用'), '0' => _t('关闭')), '1', _t('<div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 35px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">阅读增强</div>启用图片灯箱特效'), _t('开启后文章内的图片点击可放大。会自动引入Viewerjs，略微增加网页加载时间'));
+    $Dear_lightbox = new Typecho_Widget_Helper_Form_Element_Radio('Dear_lightbox', array('1' => _t('启用'), '0' => _t('关闭')), '1', _t('<div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 35px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">阅读体验</div>启用图片灯箱特效'), _t('开启后文章内的图片点击可放大。会自动引入Viewerjs，略微增加网页加载时间'));
     $form->addInput($Dear_lightbox);
 
     $Dear_highlight = new Typecho_Widget_Helper_Form_Element_Radio('Dear_highlight', array('1' => _t('启用'), '0' => _t('关闭')), '1', _t('代码高亮'), _t('启用后代码块将拥有高亮。会自动引入Highlight.js，略微增加网页加载时间'));
     $form->addInput($Dear_highlight);
+
+    $Dear_headingToggle = new Typecho_Widget_Helper_Form_Element_Radio('Dear_headingToggle', array('1' => _t('启用'), '0' => _t('关闭')), '1', _t('文章标题折叠箭头'), _t('开启后文章正文内每个标题前会出现收缩/展开箭头，点击可折叠该标题下的所有内容。'));
+    $form->addInput($Dear_headingToggle);
+
+    $Dear_linkNewWindow = new Typecho_Widget_Helper_Form_Element_Radio('Dear_linkNewWindow', array('1' => _t('是'), '0' => _t('否')), '1', _t('文章内的链接在新窗口打开'), _t(''));
+    $form->addInput($Dear_linkNewWindow);
 
     $Dear_toc = new Typecho_Widget_Helper_Form_Element_Radio('Dear_toc', array('0' => _t('关闭'), 'left' => _t('左侧'), 'right' => _t('右侧')), 'right', _t('<div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 35px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">目录</div>文章目录显示'), _t('选择左侧或右侧，如果当前文章有标题层级结构，则自动生成目录。'));
     $form->addInput($Dear_toc);

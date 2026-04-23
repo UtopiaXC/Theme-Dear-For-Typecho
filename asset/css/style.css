@@ -210,7 +210,38 @@ ul.posts li a:visited {
     text-decoration: underline;
 }
 
-.tag_list .tag_item{
+.tag_list .tag_item {
     display: inline-block;
     padding: 5px;
+}
+
+.heading-collapse-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.1em;
+    height: 1.1em;
+    margin-right: 0.3em;
+    font-size: 0.65em;
+    cursor: pointer;
+    color: var(--gray-color);
+    border-radius: 3px;
+    transition: color 0.2s, background-color 0.2s, transform 0.2s;
+    vertical-align: middle;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.heading-collapse-arrow:hover {
+    color: var(--heading-color);
+    background-color: rgba(128, 128, 128, 0.15);
+}
+
+.heading-collapse-wrapper {
+    overflow: hidden;
+    transition: opacity 0.2s ease;
+}
+
+.heading-collapse-wrapper.heading-collapsed {
+    display: none;
 }

@@ -6,6 +6,8 @@ $rssUrl = is_null($this->options->Dear_rssUrl) ? "none" : $this->options->Dear_r
 $enableHighlightjs = is_null($this->options->Dear_highlight) ? false : (bool) $this->options->Dear_highlight;
 $tocPosition = is_null($this->options->Dear_toc) ? '0' : $this->options->Dear_toc;
 $tocDepth = is_null($this->options->Dear_toc_depth) ? '0' : $this->options->Dear_toc_depth;
+$linkNewWindow = is_null($this->options->Dear_linkNewWindow) ? '1' : $this->options->Dear_linkNewWindow;
+$headingToggle = is_null($this->options->Dear_headingToggle) ? '0' : $this->options->Dear_headingToggle;
 ?>
 </main>
 <footer>
@@ -139,7 +141,7 @@ $tocDepth = is_null($this->options->Dear_toc_depth) ? '0' : $this->options->Dear
             if (window.innerWidth <= 1250) {
                 depthSetting = 0;
             }
-            
+
             let minLevel = 6;
             headings.forEach(h => {
                 let lvl = parseInt(h.tagName.substring(1));
@@ -324,6 +326,70 @@ $tocDepth = is_null($this->options->Dear_toc_depth) ? '0' : $this->options->Dear
                 ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
                 ignoredClasses: ["nokatex"]
             });
+        });
+    </script>
+<?php endif; ?>
+<?php if (($this->is('post') || $this->is('page')) && $linkNewWindow == '1'): ?>
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function () {
+            const gallery = document.getElementById("gallery");
+            if (gallery) {
+                const links = gallery.querySelectorAll("a");
+                links.forEach(link => {
+                    if (link.getAttribute("href") && !link.getAttribute("href").startsWith("#")) {
+                        link.setAttribute("target", "_blank");
+                    }
+                });
+            }
+        });
+    </script>
+<?php endif; ?>
+<?php if (($this->is('post') || $this->is('page')) && $headingToggle == '1'): ?>
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function () {
+            const gallery = document.getElementById("gallery");
+            if (!gallery) return;
+
+            const HEADING_TAGS = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6'];
+
+            function getLevel(el) {
+                return parseInt(el.tagName.substring(1));
+            }
+            const children = Array.from(gallery.childNodes).filter(n =>
+                n.nodeType === Node.ELEMENT_NODE || (n.nodeType === Node.TEXT_NODE && n.textContent.trim() !== '')
+            );
+
+            for (let i = 0; i < children.length; i++) {
+                const el = children[i];
+                if (el.nodeType !== Node.ELEMENT_NODE) continue;
+                if (!HEADING_TAGS.includes(el.tagName)) continue;
+
+                const level = getLevel(el);
+                const contentNodes = [];
+                for (let j = i + 1; j < children.length; j++) {
+                    const sibling = children[j];
+                    if (sibling.nodeType === Node.ELEMENT_NODE && HEADING_TAGS.includes(sibling.tagName)) {
+                        if (getLevel(sibling) <= level) break;
+                    }
+                    contentNodes.push(sibling);
+                }
+
+                if (contentNodes.length === 0) continue;
+                const wrapper = document.createElement('div');
+                wrapper.className = 'heading-collapse-wrapper';
+                el.after(wrapper);
+                contentNodes.forEach(n => wrapper.appendChild(n));
+                const arrow = document.createElement('span');
+                arrow.className = 'heading-collapse-arrow';
+                arrow.setAttribute('aria-label', '折叠/展开');
+                arrow.innerHTML = '&#9660;';
+                el.insertBefore(arrow, el.firstChild);
+                arrow.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    const collapsed = wrapper.classList.toggle('heading-collapsed');
+                    arrow.innerHTML = collapsed ? '&#9654;' : '&#9660;';
+                });
+            }
         });
     </script>
 <?php endif; ?>
