@@ -9,56 +9,74 @@ class DearTheme_AiSummary
     public static function handleRequest()
     {
         header('Content-Type: application/json; charset=utf-8');
-        $action = isset($_GET['dear_ai_action']) ? $_GET['dear_ai_action'] : '';
+        $actionParameter = isset($_GET['dear_ai_action']) ? $_GET['dear_ai_action'] : '';
         try {
-            switch ($action) {
-                case 'get':     self::actionGet(); break;
-                case 'generate': self::actionGenerate(); break;
-                case 'models':  self::actionModels(); break;
-                default: self::error('Invalid action', 400);
+            switch ($actionParameter) {
+                case 'get':
+                    self::actionGet();
+                    break;
+                case 'generate':
+                    self::actionGenerate();
+                    break;
+                case 'models':
+                    self::actionModels();
+                    break;
+                default:
+                    self::error('Invalid action', 400);
             }
-        } catch (\Exception $e) {
-            self::error($e->getMessage(), 500);
+        } catch (\Exception $exception) {
+            self::error($exception->getMessage(), 500);
         }
         exit;
     }
 
     private static function ensureTable()
     {
-        if (self::$tableChecked) return;
-        $db  = \Typecho\Db::get();
-        $pre = $db->getPrefix();
-        $adapter = $db->getAdapterName();
-        $isSQLite = stripos($adapter, 'SQLite') !== false;
+        if (self::$tableChecked) {
+            return;
+        }
+        $database = \Typecho\Db::get();
+        $tablePrefix = $database->getPrefix();
+        $databaseAdapter = $database->getAdapterName();
+        $isSQLiteDatabase = stripos($databaseAdapter, 'SQLite') !== false;
 
         try {
-            $db->fetchRow($db->select('id', 'model_name')->from('table.dear_ai_summaries')->limit(1));
+            $database->fetchRow($database->select('id', 'model_name')->from('table.dear_ai_summaries')->limit(1));
             self::$tableChecked = true;
             return;
-        } catch (\Exception $e) {}
+        } catch (\Exception $exception) {
+        }
 
-        $oldExists = false;
+        $oldTableExists = false;
         try {
-            $db->fetchRow($db->select('id')->from('table.dear_ai_summaries')->limit(1));
-            $oldExists = true;
-        } catch (\Exception $e) {}
+            $database->fetchRow($database->select('id')->from('table.dear_ai_summaries')->limit(1));
+            $oldTableExists = true;
+        } catch (\Exception $exception) {
+        }
 
-        if ($oldExists) {
+        if ($oldTableExists) {
             try {
-                if ($isSQLite) {
-                    $db->query("ALTER TABLE \"{$pre}dear_ai_summaries\" ADD COLUMN \"model_name\" TEXT NOT NULL DEFAULT ''");
+                if ($isSQLiteDatabase) {
+                    $database->query("ALTER TABLE \"{$tablePrefix}dear_ai_summaries\" ADD COLUMN \"model_name\" TEXT NOT NULL DEFAULT ''");
                 } else {
-                    $db->query("ALTER TABLE `{$pre}dear_ai_summaries` ADD COLUMN `model_name` VARCHAR(100) NOT NULL DEFAULT '' AFTER `cid`");
-                    try { $db->query("ALTER TABLE `{$pre}dear_ai_summaries` DROP INDEX `uk_cid`"); } catch (\Exception $e) {}
-                    $db->query("ALTER TABLE `{$pre}dear_ai_summaries` ADD UNIQUE KEY `uk_cid_model` (`cid`, `model_name`)");
+                    $database->query("ALTER TABLE `{$tablePrefix}dear_ai_summaries` ADD COLUMN `model_name` VARCHAR(100) NOT NULL DEFAULT '' AFTER `cid`");
+                    try {
+                        $database->query("ALTER TABLE `{$tablePrefix}dear_ai_summaries` DROP INDEX `uk_cid`");
+                    } catch (\Exception $exception) {
+                    }
+                    $database->query("ALTER TABLE `{$tablePrefix}dear_ai_summaries` ADD UNIQUE KEY `uk_cid_model` (`cid`, `model_name`)");
                 }
-            } catch (\Exception $e) {}
-            if ($isSQLite) {
-                try { $db->query("CREATE UNIQUE INDEX IF NOT EXISTS \"{$pre}idx_cid_model\" ON \"{$pre}dear_ai_summaries\" (\"cid\", \"model_name\")"); } catch (\Exception $e) {}
+            } catch (\Exception $exception) {
+            }
+            if ($isSQLiteDatabase) {
+                try {
+                    $database->query("CREATE UNIQUE INDEX IF NOT EXISTS \"{$tablePrefix}idx_cid_model\" ON \"{$tablePrefix}dear_ai_summaries\" (\"cid\", \"model_name\")");
+                } catch (\Exception $exception) {
+                }
             }
         } else {
-            if ($isSQLite) {
-                $db->query("CREATE TABLE IF NOT EXISTS \"{$pre}dear_ai_summaries\" (
+            if ($isSQLiteDatabase) {
+                $database->query("CREATE TABLE IF NOT EXISTS \"{$tablePrefix}dear_ai_summaries\" (
                     \"id\" INTEGER PRIMARY KEY AUTOINCREMENT,
                     \"cid\" INTEGER NOT NULL,
                     \"model_name\" TEXT NOT NULL DEFAULT '',
@@ -71,7 +89,7 @@ class DearTheme_AiSummary
                     UNIQUE(\"cid\", \"model_name\")
                 )");
             } else {
-                $db->query("CREATE TABLE IF NOT EXISTS `{$pre}dear_ai_summaries` (
+                $database->query("CREATE TABLE IF NOT EXISTS `{$tablePrefix}dear_ai_summaries` (
                     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
                     `cid` INT UNSIGNED NOT NULL,
                     `model_name` VARCHAR(100) NOT NULL DEFAULT '',
@@ -88,16 +106,16 @@ class DearTheme_AiSummary
         }
 
         try {
-            $db->fetchRow($db->select('id')->from('table.dear_ai_rate_log')->limit(1));
-        } catch (\Exception $e) {
-            if ($isSQLite) {
-                $db->query("CREATE TABLE IF NOT EXISTS \"{$pre}dear_ai_rate_log\" (
+            $database->fetchRow($database->select('id')->from('table.dear_ai_rate_log')->limit(1));
+        } catch (\Exception $exception) {
+            if ($isSQLiteDatabase) {
+                $database->query("CREATE TABLE IF NOT EXISTS \"{$tablePrefix}dear_ai_rate_log\" (
                     \"id\" INTEGER PRIMARY KEY AUTOINCREMENT,
                     \"cid\" INTEGER NOT NULL DEFAULT 0,
                     \"request_time\" INTEGER NOT NULL
                 )");
             } else {
-                $db->query("CREATE TABLE IF NOT EXISTS `{$pre}dear_ai_rate_log` (
+                $database->query("CREATE TABLE IF NOT EXISTS `{$tablePrefix}dear_ai_rate_log` (
                     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
                     `cid` INT UNSIGNED NOT NULL DEFAULT 0,
                     `request_time` INT UNSIGNED NOT NULL,
@@ -113,29 +131,32 @@ class DearTheme_AiSummary
 
     private static function actionGet()
     {
-        $cid = intval($_GET['cid'] ?? 0);
-        $modelName = isset($_GET['model_name']) ? trim($_GET['model_name']) : '';
-        if ($cid <= 0) { self::error('Invalid cid', 400); return; }
+        $contentId = intval($_GET['cid'] ?? 0);
+        $targetModelName = isset($_GET['model_name']) ? trim($_GET['model_name']) : '';
+        if ($contentId <= 0) {
+            self::error('Invalid cid', 400);
+            return;
+        }
 
         self::ensureTable();
-        $db = \Typecho\Db::get();
+        $database = \Typecho\Db::get();
 
-        $query = $db->select()->from('table.dear_ai_summaries')->where('cid = ?', $cid);
-        if ($modelName !== '') {
-            $query->where('model_name = ?', $modelName);
+        $databaseQuery = $database->select()->from('table.dear_ai_summaries')->where('cid = ?', $contentId);
+        if ($targetModelName !== '') {
+            $databaseQuery->where('model_name = ?', $targetModelName);
         }
-        $query->order('updated_at', \Typecho\Db::SORT_DESC)->limit(1);
-        $row = $db->fetchRow($query);
+        $databaseQuery->order('updated_at', \Typecho\Db::SORT_DESC)->limit(1);
+        $queryResultRow = $database->fetchRow($databaseQuery);
 
-        if ($row) {
+        if ($queryResultRow) {
             self::success([
                 'exists'     => true,
-                'summary'    => $row['summary'],
-                'model'      => $row['model_display_name'],
-                'model_name' => $row['model_name'],
-                'status'     => $row['status'],
-                'error'      => $row['error_message'] ?: null,
-                'updated_at' => intval($row['updated_at'])
+                'summary'    => $queryResultRow['summary'],
+                'model'      => $queryResultRow['model_display_name'],
+                'model_name' => $queryResultRow['model_name'],
+                'status'     => $queryResultRow['status'],
+                'error'      => $queryResultRow['error_message'] ?: null,
+                'updated_at' => intval($queryResultRow['updated_at'])
             ]);
         } else {
             self::success(['exists' => false]);
@@ -144,190 +165,250 @@ class DearTheme_AiSummary
 
     private static function actionModels()
     {
-        $options = \Widget\Options::alloc();
-        $models  = self::parseModels($options->Dear_aiModels);
-        $list = [];
-        foreach ($models as $i => $m) {
-            $list[] = ['index' => $i, 'display' => $m['model_display'], 'name' => $m['model_name']];
+        $themeOptions = \Widget\Options::alloc();
+        $parsedModelsArray  = self::parseModels($themeOptions->Dear_aiModels);
+        $modelsResponseList = [];
+        foreach ($parsedModelsArray as $modelIndex => $modelConfiguration) {
+            $modelsResponseList[] = [
+                'index' => $modelIndex,
+                'display' => $modelConfiguration['model_display'],
+                'name' => $modelConfiguration['model_name']
+            ];
         }
-        self::success(['models' => $list]);
+        self::success(['models' => $modelsResponseList]);
     }
 
     private static function actionGenerate()
     {
-        $cid        = intval($_GET['cid'] ?? 0);
-        $modelIndex = intval($_GET['model_index'] ?? 0);
-        if ($cid <= 0) { self::error('Invalid cid', 400); return; }
+        $contentId = intval($_GET['cid'] ?? 0);
+        $targetModelIndex = intval($_GET['model_index'] ?? 0);
+        if ($contentId <= 0) {
+            self::error('Invalid cid', 400);
+            return;
+        }
 
         self::ensureTable();
-        $db      = \Typecho\Db::get();
-        $options = \Widget\Options::alloc();
+        $database = \Typecho\Db::get();
+        $themeOptions = \Widget\Options::alloc();
 
-        $timeout = intval($options->Dear_aiTimeout ?: 15);
+        $requestTimeoutLimit = intval($themeOptions->Dear_aiTimeout ?: 15);
 
-        if ($options->Dear_aiEnabled != '1') {
+        if ($themeOptions->Dear_aiEnabled != '1') {
             self::error('AI摘要功能已关闭', 403);
             return;
         }
 
-        $models = self::parseModels($options->Dear_aiModels);
-        if (empty($models)) { self::error('未配置AI模型', 400); return; }
-        if (!isset($models[$modelIndex])) $modelIndex = 0;
-        $model = $models[$modelIndex];
+        $parsedModelsArray = self::parseModels($themeOptions->Dear_aiModels);
+        if (empty($parsedModelsArray)) {
+            self::error('未配置AI模型', 400);
+            return;
+        }
+        if (!isset($parsedModelsArray[$targetModelIndex])) {
+            $targetModelIndex = 0;
+        }
+        $selectedModelConfiguration = $parsedModelsArray[$targetModelIndex];
 
-        $existing = $db->fetchRow(
-            $db->select()->from('table.dear_ai_summaries')
-                ->where('cid = ?', $cid)->where('model_name = ?', $model['model_name'])
+        $existingSummaryRecord = $database->fetchRow(
+            $database->select()->from('table.dear_ai_summaries')
+                ->where('cid = ?', $contentId)->where('model_name = ?', $selectedModelConfiguration['model_name'])
         );
 
-        if ($existing && $existing['status'] === 'generating') {
-            $elapsed = time() - intval($existing['updated_at']);
-            if ($elapsed < $timeout) {
+        if ($existingSummaryRecord && $existingSummaryRecord['status'] === 'generating') {
+            $timeElapsedSinceUpdate = time() - intval($existingSummaryRecord['updated_at']);
+            if ($timeElapsedSinceUpdate < $requestTimeoutLimit) {
                 self::success([
-                    'exists' => true, 'status' => 'generating',
-                    'summary' => '', 'model' => $model['model_display'],
-                    'model_name' => $model['model_name'],
+                    'exists' => true,
+                    'status' => 'generating',
+                    'summary' => '',
+                    'model' => $selectedModelConfiguration['model_display'],
+                    'model_name' => $selectedModelConfiguration['model_name'],
                     'message' => '该文章正在生成摘要，请稍候...'
                 ]);
                 return;
             }
         }
 
-        $rateLimitResult = self::checkRateLimit($cid, $options);
-        if ($rateLimitResult !== true) { self::error($rateLimitResult, 429); return; }
+        $rateLimitCheckResult = self::checkRateLimit($contentId, $themeOptions);
+        if ($rateLimitCheckResult !== true) {
+            self::error($rateLimitCheckResult, 429);
+            return;
+        }
 
-        $post = $db->fetchRow($db->select('cid', 'title', 'text')->from('table.contents')->where('cid = ?', $cid));
-        if (!$post) { self::error('文章不存在', 404); return; }
+        $articleDataRow = $database->fetchRow($database->select('cid', 'title', 'text')->from('table.contents')->where('cid = ?', $contentId));
+        if (!$articleDataRow) {
+            self::error('文章不存在', 404);
+            return;
+        }
 
-        $now = time();
-        if ($existing) {
-            $db->query($db->update('table.dear_ai_summaries')
-                ->rows(['status' => 'generating', 'error_message' => '', 'updated_at' => $now])
-                ->where('cid = ?', $cid)->where('model_name = ?', $model['model_name']));
+        $currentTimestamp = time();
+        $previousSummaryStatus = null;
+
+        if ($existingSummaryRecord) {
+            $previousSummaryStatus = $existingSummaryRecord['status'];
+            $database->query($database->update('table.dear_ai_summaries')
+                ->rows(['status' => 'generating', 'error_message' => '', 'updated_at' => $currentTimestamp])
+                ->where('cid = ?', $contentId)->where('model_name = ?', $selectedModelConfiguration['model_name']));
         } else {
-            $db->query($db->insert('table.dear_ai_summaries')->rows([
-                'cid' => $cid, 'model_name' => $model['model_name'],
-                'model_display_name' => $model['model_display'],
-                'summary' => '', 'status' => 'generating',
-                'error_message' => '', 'created_at' => $now, 'updated_at' => $now
+            $database->query($database->insert('table.dear_ai_summaries')->rows([
+                'cid' => $contentId,
+                'model_name' => $selectedModelConfiguration['model_name'],
+                'model_display_name' => $selectedModelConfiguration['model_display'],
+                'summary' => '',
+                'status' => 'generating',
+                'error_message' => '',
+                'created_at' => $currentTimestamp,
+                'updated_at' => $currentTimestamp
             ]));
         }
 
-        $db->query($db->insert('table.dear_ai_rate_log')->rows(['cid' => $cid, 'request_time' => $now]));
+        $database->query($database->insert('table.dear_ai_rate_log')->rows(['cid' => $contentId, 'request_time' => $currentTimestamp]));
 
-        $prompt = $options->Dear_aiPrompt;
-        if (empty($prompt)) $prompt = self::defaultPrompt();
-        $articleText = preg_replace('//s', '', $post['text']);
-        $userMessage = "文章标题：{$post['title']}\n\n文章正文：\n{$articleText}";
+        $systemPromptText = $themeOptions->Dear_aiPrompt;
+        if (empty($systemPromptText)) {
+            $systemPromptText = self::defaultPrompt();
+        }
+        $strippedArticleText = preg_replace('//s', '', $articleDataRow['text']);
+        $combinedUserMessage = "文章标题：{$articleDataRow['title']}\n\n文章正文：\n{$strippedArticleText}";
 
         try {
-            $result = self::callOpenAI($model, $prompt, $userMessage, $timeout);
-            $db->query($db->update('table.dear_ai_summaries')->rows([
-                'summary' => $result, 'model_display_name' => $model['model_display'],
-                'status' => 'completed', 'error_message' => '', 'updated_at' => time()
-            ])->where('cid = ?', $cid)->where('model_name = ?', $model['model_name']));
+            $generatedResultString = self::callOpenAI($selectedModelConfiguration, $systemPromptText, $combinedUserMessage, $requestTimeoutLimit);
+            $database->query($database->update('table.dear_ai_summaries')->rows([
+                'summary' => $generatedResultString,
+                'model_display_name' => $selectedModelConfiguration['model_display'],
+                'status' => 'completed',
+                'error_message' => '',
+                'updated_at' => time()
+            ])->where('cid = ?', $contentId)->where('model_name = ?', $selectedModelConfiguration['model_name']));
 
             self::success([
-                'exists' => true, 'summary' => $result, 'model' => $model['model_display'],
-                'model_name' => $model['model_name'], 'status' => 'completed', 'updated_at' => time()
+                'exists' => true,
+                'summary' => $generatedResultString,
+                'model' => $selectedModelConfiguration['model_display'],
+                'model_name' => $selectedModelConfiguration['model_name'],
+                'status' => 'completed',
+                'updated_at' => time()
             ]);
-        } catch (\Exception $e) {
-            $db->query($db->update('table.dear_ai_summaries')->rows([
-                'status' => 'error', 'error_message' => $e->getMessage(), 'updated_at' => time()
-            ])->where('cid = ?', $cid)->where('model_name = ?', $model['model_name']));
-            self::error('AI请求失败: ' . $e->getMessage(), 502);
+        } catch (\Exception $exception) {
+            if ($previousSummaryStatus === 'completed') {
+                $database->query($database->update('table.dear_ai_summaries')->rows([
+                    'status' => 'completed',
+                    'error_message' => '',
+                    'updated_at' => time()
+                ])->where('cid = ?', $contentId)->where('model_name = ?', $selectedModelConfiguration['model_name']));
+            } else {
+                $database->query($database->update('table.dear_ai_summaries')->rows([
+                    'status' => 'error',
+                    'error_message' => $exception->getMessage(),
+                    'updated_at' => time()
+                ])->where('cid = ?', $contentId)->where('model_name = ?', $selectedModelConfiguration['model_name']));
+            }
+            self::error('AI请求失败: ' . $exception->getMessage(), 502);
         }
     }
 
-    private static function callOpenAI($model, $systemPrompt, $userMessage, $timeout = 15)
+    private static function callOpenAI($modelConfiguration, $systemPromptText, $combinedUserMessage, $requestTimeoutLimit = 15)
     {
-        $url = rtrim($model['api_url'], '/');
-        if (!preg_match('/\/chat\/completions\/?$/', $url)) $url .= '/chat/completions';
+        $apiEndpointUrl = rtrim($modelConfiguration['api_url'], '/');
+        if (!preg_match('/\/chat\/completions\/?$/', $apiEndpointUrl)) {
+            $apiEndpointUrl .= '/chat/completions';
+        }
 
-        $payload = json_encode([
-            'model'    => $model['model_name'],
-            'messages' => [['role' => 'system', 'content' => $systemPrompt], ['role' => 'user', 'content' => $userMessage]],
+        $requestPayloadData = json_encode([
+            'model'    => $modelConfiguration['model_name'],
+            'messages' => [
+                ['role' => 'system', 'content' => $systemPromptText],
+                ['role' => 'user', 'content' => $combinedUserMessage]
+            ],
             'temperature' => 0.6
         ], JSON_UNESCAPED_UNICODE);
 
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        $curlHandler = curl_init($apiEndpointUrl);
+        curl_setopt_array($curlHandler, [
             CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_POSTFIELDS     => $requestPayloadData,
             CURLOPT_HTTPHEADER     => [
                 'Content-Type: application/json',
-                'Authorization: Bearer ' . $model['api_key'],
+                'Authorization: Bearer ' . $modelConfiguration['api_key'],
                 'Expect:'
             ],
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => $timeout,
+            CURLOPT_TIMEOUT        => $requestTimeoutLimit,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_SSL_VERIFYPEER => false
         ]);
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlErr  = curl_error($ch);
-        curl_close($ch);
+        $curlResponseResult = curl_exec($curlHandler);
+        $httpResponseCode = curl_getinfo($curlHandler, CURLINFO_HTTP_CODE);
+        $curlErrorMessage  = curl_error($curlHandler);
+        curl_close($curlHandler);
 
-        if ($response === false) throw new \Exception('连接超时或错误: ' . $curlErr);
-
-        $data = json_decode($response, true);
-        if ($httpCode !== 200) {
-            $errMsg = isset($data['error']['message']) ? $data['error']['message'] : '接口返回错误 ' . $httpCode;
-            throw new \Exception($errMsg);
+        if ($curlResponseResult === false) {
+            throw new \Exception('连接超时或错误: ' . $curlErrorMessage);
         }
 
-        if (isset($data['choices'][0]['message']['content'])) {
-            return trim($data['choices'][0]['message']['content']);
+        $responseDataArray = json_decode($curlResponseResult, true);
+        if ($httpResponseCode !== 200) {
+            $apiErrorMessage = isset($responseDataArray['error']['message']) ? $responseDataArray['error']['message'] : '接口返回错误 ' . $httpResponseCode;
+            throw new \Exception($apiErrorMessage);
+        }
+
+        if (isset($responseDataArray['choices'][0]['message']['content'])) {
+            return trim($responseDataArray['choices'][0]['message']['content']);
         }
         throw new \Exception('AI 未返回有效内容');
     }
 
-    private static function checkRateLimit($cid, $options)
+    private static function checkRateLimit($contentId, $themeOptions)
     {
-        $db = \Typecho\Db::get();
-        $now = time();
+        $database = \Typecho\Db::get();
+        $currentTimestamp = time();
 
-        $globalMinutes = intval($options->Dear_aiGlobalRateMinutes ?: 60);
-        $globalMax     = intval($options->Dear_aiGlobalRateMax ?: 1000);
-        if ($globalMax > 0) {
-            $since = $now - $globalMinutes * 60;
-            $cnt = $db->fetchObject($db->select('COUNT(*) AS cnt')->from('table.dear_ai_rate_log')
-                ->where('request_time > ?', $since))->cnt;
-            if ($cnt >= $globalMax) return "全局请求限制：每 {$globalMinutes} 分钟最多 {$globalMax} 次，已达上限";
+        $globalRateMinutesLimit = intval($themeOptions->Dear_aiGlobalRateMinutes ?: 60);
+        $globalRateMaxRequests  = intval($themeOptions->Dear_aiGlobalRateMax ?: 1000);
+        if ($globalRateMaxRequests > 0) {
+            $globalSinceTimestamp = $currentTimestamp - $globalRateMinutesLimit * 60;
+            $globalRequestCount = $database->fetchObject($database->select('COUNT(*) AS cnt')->from('table.dear_ai_rate_log')
+                ->where('request_time > ?', $globalSinceTimestamp))->cnt;
+            if ($globalRequestCount >= $globalRateMaxRequests) {
+                return "全局请求限制：每 {$globalRateMinutesLimit} 分钟最多 {$globalRateMaxRequests} 次，已达上限";
+            }
         }
 
-        $articleMinutes = intval($options->Dear_aiArticleRateMinutes ?: 1);
-        $articleMax     = intval($options->Dear_aiArticleRateMax ?: 5);
-        if ($articleMax > 0) {
-            $since = $now - $articleMinutes * 60;
-            $cnt = $db->fetchObject($db->select('COUNT(*) AS cnt')->from('table.dear_ai_rate_log')
-                ->where('cid = ?', $cid)->where('request_time > ?', $since))->cnt;
-            if ($cnt >= $articleMax) return "该文章请求限制：每 {$articleMinutes} 分钟最多 {$articleMax} 次，已达上限";
+        $articleRateMinutesLimit = intval($themeOptions->Dear_aiArticleRateMinutes ?: 1);
+        $articleRateMaxRequests  = intval($themeOptions->Dear_aiArticleRateMax ?: 5);
+        if ($articleRateMaxRequests > 0) {
+            $articleSinceTimestamp = $currentTimestamp - $articleRateMinutesLimit * 60;
+            $articleRequestCount = $database->fetchObject($database->select('COUNT(*) AS cnt')->from('table.dear_ai_rate_log')
+                ->where('cid = ?', $contentId)->where('request_time > ?', $articleSinceTimestamp))->cnt;
+            if ($articleRequestCount >= $articleRateMaxRequests) {
+                return "该文章请求限制：每 {$articleRateMinutesLimit} 分钟最多 {$articleRateMaxRequests} 次，已达上限";
+            }
         }
 
         return true;
     }
 
-
-    private static function parseModels($json)
+    private static function parseModels($jsonStringInput)
     {
-        if (empty($json)) return [];
-        $arr = json_decode($json, true);
-        if (!is_array($arr)) return [];
-        $valid = [];
-        foreach ($arr as $m) {
-            if (!empty($m['api_url']) && !empty($m['api_key']) && !empty($m['model_name'])) {
-                $valid[] = [
-                    'api_url'       => $m['api_url'],
-                    'api_key'       => $m['api_key'],
-                    'model_display' => !empty($m['model_display']) ? $m['model_display'] : $m['model_name'],
-                    'model_name'    => $m['model_name']
+        if (empty($jsonStringInput)) {
+            return [];
+        }
+        $decodedJsonArray = json_decode($jsonStringInput, true);
+        if (!is_array($decodedJsonArray)) {
+            return [];
+        }
+        $validModelsArray = [];
+        foreach ($decodedJsonArray as $modelConfiguration) {
+            if (!empty($modelConfiguration['api_url']) && !empty($modelConfiguration['api_key']) && !empty($modelConfiguration['model_name'])) {
+                $validModelsArray[] = [
+                    'api_url'       => $modelConfiguration['api_url'],
+                    'api_key'       => $modelConfiguration['api_key'],
+                    'model_display' => !empty($modelConfiguration['model_display']) ? $modelConfiguration['model_display'] : $modelConfiguration['model_name'],
+                    'model_name'    => $modelConfiguration['model_name']
                 ];
             }
         }
-        return $valid;
+        return $validModelsArray;
     }
 
     public static function defaultPrompt()
@@ -339,11 +420,12 @@ class DearTheme_AiSummary
 4. 可以用介绍的口吻来介绍本篇文章的内容，但是要尽量完整并保留文章原滋原味';
     }
 
-    private static function success($data) {
-        echo json_encode(array_merge(['ok' => true], $data), JSON_UNESCAPED_UNICODE);
+    private static function success($responsePayloadData) {
+        echo json_encode(array_merge(['ok' => true], $responsePayloadData), JSON_UNESCAPED_UNICODE);
     }
-    private static function error($msg, $code = 400) {
-        http_response_code($code);
-        echo json_encode(['ok' => false, 'error' => $msg], JSON_UNESCAPED_UNICODE);
+
+    private static function error($errorMessageText, $httpStatusCode = 400) {
+        http_response_code($httpStatusCode);
+        echo json_encode(['ok' => false, 'error' => $errorMessageText], JSON_UNESCAPED_UNICODE);
     }
 }

@@ -13,12 +13,12 @@ $headingToggle = is_null($this->options->Dear_headingToggle) ? '0' : $this->opti
 <footer>
     <p><a href="#">返回顶部 ↑</a></p>
     <span class="intro">&copy; <?php echo date('Y'); ?> <a href="<?php $this->options->siteUrl(); ?>"
-            title="<?php $this->options->title(); ?>"><?php $this->options->title(); ?></a><?php if ($rssUrl != "none"): ?>
+                                                           title="<?php $this->options->title(); ?>"><?php $this->options->title(); ?></a><?php if ($rssUrl != "none"): ?>
             | <a href="<?php echo $rssUrl; ?>" title="RSS">RSS</a><?php endif; ?></br><a href="https://typecho.org/"
-            target="_blank" title="Typecho">Typecho </a>Theme <a
-            href="https://github.com/UtopiaXC/Theme-Dear-For-Typecho" target="_blank" title="Dear">Dear</a> By <a
-            href="https://yayu.net/" target="_blank" title="Jeff Chen">Jeff Chen</a> and <a
-            href="https://www.utopiaxc.cn/" target="_blank" title="UtopiaXC">UtopiaXC</a>.</span>
+                                                                                         target="_blank" title="Typecho">Typecho </a>Theme <a
+                href="https://github.com/UtopiaXC/Theme-Dear-For-Typecho" target="_blank" title="Dear">Dear</a> By <a
+                href="https://yayu.net/" target="_blank" title="Jeff Chen">Jeff Chen</a> and <a
+                href="https://www.utopiaxc.cn/" target="_blank" title="UtopiaXC">UtopiaXC</a>.</span>
 </footer>
 <?php $this->footer(); ?>
 <?php if (!empty($this->options->Dear_customJs)): ?>
@@ -347,49 +347,72 @@ $headingToggle = is_null($this->options->Dear_headingToggle) ? '0' : $this->opti
 <?php if (($this->is('post') || $this->is('page')) && $headingToggle == '1'): ?>
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function () {
-            const gallery = document.getElementById("gallery");
-            if (!gallery) return;
-
-            const HEADING_TAGS = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6'];
-
-            function getLevel(el) {
-                return parseInt(el.tagName.substring(1));
+            const galleryElement = document.getElementById("gallery");
+            if (!galleryElement) {
+                return;
             }
-            const children = Array.from(gallery.childNodes).filter(n =>
-                n.nodeType === Node.ELEMENT_NODE || (n.nodeType === Node.TEXT_NODE && n.textContent.trim() !== '')
-            );
 
-            for (let i = 0; i < children.length; i++) {
-                const el = children[i];
-                if (el.nodeType !== Node.ELEMENT_NODE) continue;
-                if (!HEADING_TAGS.includes(el.tagName)) continue;
+            const headingElements = Array.from(galleryElement.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+            if (headingElements.length === 0) {
+                return;
+            }
 
-                const level = getLevel(el);
-                const contentNodes = [];
-                for (let j = i + 1; j < children.length; j++) {
-                    const sibling = children[j];
-                    if (sibling.nodeType === Node.ELEMENT_NODE && HEADING_TAGS.includes(sibling.tagName)) {
-                        if (getLevel(sibling) <= level) break;
+            headingElements.forEach(function (currentHeading) {
+                const currentLevelMatch = currentHeading.tagName.match(/^H([1-6])$/);
+                if (!currentLevelMatch) {
+                    return;
+                }
+                const currentHeadingLevel = parseInt(currentLevelMatch[1], 10);
+
+                const collapseWrapper = document.createElement('div');
+                collapseWrapper.className = 'heading-collapse-wrapper';
+
+                currentHeading.parentNode.insertBefore(collapseWrapper, currentHeading.nextSibling);
+
+                let siblingNode = collapseWrapper.nextSibling;
+                while (siblingNode) {
+                    if (siblingNode.nodeType === Node.ELEMENT_NODE) {
+                        const siblingLevelMatch = siblingNode.tagName.match(/^H([1-6])$/);
+                        if (siblingLevelMatch) {
+                            const siblingHeadingLevel = parseInt(siblingLevelMatch[1], 10);
+                            if (siblingHeadingLevel <= currentHeadingLevel) {
+                                break;
+                            }
+                        }
                     }
-                    contentNodes.push(sibling);
+                    const nextSiblingNode = siblingNode.nextSibling;
+                    collapseWrapper.appendChild(siblingNode);
+                    siblingNode = nextSiblingNode;
                 }
 
-                if (contentNodes.length === 0) continue;
-                const wrapper = document.createElement('div');
-                wrapper.className = 'heading-collapse-wrapper';
-                el.after(wrapper);
-                contentNodes.forEach(n => wrapper.appendChild(n));
-                const arrow = document.createElement('span');
-                arrow.className = 'heading-collapse-arrow';
-                arrow.setAttribute('aria-label', '折叠/展开');
-                arrow.innerHTML = '&#9660;';
-                el.insertBefore(arrow, el.firstChild);
-                arrow.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    const collapsed = wrapper.classList.toggle('heading-collapsed');
-                    arrow.innerHTML = collapsed ? '&#9654;' : '&#9660;';
+                if (collapseWrapper.childNodes.length === 0) {
+                    collapseWrapper.remove();
+                    return;
+                }
+
+                const toggleArrow = document.createElement('span');
+                toggleArrow.className = 'heading-collapse-arrow';
+                toggleArrow.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+
+                toggleArrow.style.cursor = 'pointer';
+                toggleArrow.style.display = 'inline-flex';
+                toggleArrow.style.alignItems = 'center';
+                toggleArrow.style.justifyContent = 'center';
+                toggleArrow.style.marginRight = '8px';
+                toggleArrow.style.color = 'var(--gray-color, #999)';
+                toggleArrow.style.transition = 'transform 0.3s ease';
+                toggleArrow.style.userSelect = 'none';
+                toggleArrow.style.verticalAlign = 'bottom';
+
+                currentHeading.insertBefore(toggleArrow, currentHeading.firstChild);
+
+                toggleArrow.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    const isNowCollapsed = collapseWrapper.classList.toggle('heading-collapsed');
+                    collapseWrapper.style.display = isNowCollapsed ? 'none' : 'block';
+                    toggleArrow.style.transform = isNowCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
                 });
-            }
+            });
         });
     </script>
 <?php endif; ?>
@@ -658,8 +681,6 @@ if (($this->is('post')) && $aiEnabledFooter):
                 }
             });
 
-        })();
-    </script>
         })();
     </script>
 <?php endif; ?>
