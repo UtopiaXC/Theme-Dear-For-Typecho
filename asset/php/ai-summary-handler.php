@@ -180,18 +180,32 @@ class DearTheme_AiSummary
 
     private static function actionGenerate()
     {
-        $contentId = intval($_GET['cid'] ?? 0);
-        $targetModelIndex = intval($_GET['model_index'] ?? 0);
+        if (isset($_GET['cid'])) {
+            $contentId = intval($_GET['cid']);
+        } else {
+            $contentId = 0;
+        }
+
+        if (isset($_GET['model_index'])) {
+            $targetModelIndex = intval($_GET['model_index']);
+        } else {
+            $targetModelIndex = 0;
+        }
+
         if ($contentId <= 0) {
             self::error('Invalid cid', 400);
             return;
         }
 
         self::ensureTable();
-        $database = \Typecho\Db::get();
+        $databaseConnection = \Typecho\Db::get();
         $themeOptions = \Widget\Options::alloc();
 
-        $requestTimeoutLimit = intval($themeOptions->Dear_aiTimeout ?: 15);
+        if ($themeOptions->Dear_aiTimeout) {
+            $requestTimeoutLimit = intval($themeOptions->Dear_aiTimeout);
+        } else {
+            $requestTimeoutLimit = 15;
+        }
 
         if ($themeOptions->Dear_aiEnabled != '1') {
             self::error('AI摘要功能已关闭', 403);
@@ -203,28 +217,32 @@ class DearTheme_AiSummary
             self::error('未配置AI模型', 400);
             return;
         }
-        if (!isset($parsedModelsArray[$targetModelIndex])) {
-            $targetModelIndex = 0;
-        }
-        $selectedModelConfiguration = $parsedModelsArray[$targetModelIndex];
 
-        $existingSummaryRecord = $database->fetchRow(
-            $database->select()->from('table.dear_ai_summaries')
+        if (isset($parsedModelsArray[$targetModelIndex])) {
+            $selectedModelConfiguration = $parsedModelsArray[$targetModelIndex];
+        } else {
+            $selectedModelConfiguration = $parsedModelsArray[0];
+        }
+
+        $existingSummaryRecord = $databaseConnection->fetchRow(
+            $databaseConnection->select()->from('table.dear_ai_summaries')
                 ->where('cid = ?', $contentId)->where('model_name = ?', $selectedModelConfiguration['model_name'])
         );
 
-        if ($existingSummaryRecord && $existingSummaryRecord['status'] === 'generating') {
-            $timeElapsedSinceUpdate = time() - intval($existingSummaryRecord['updated_at']);
-            if ($timeElapsedSinceUpdate < $requestTimeoutLimit) {
-                self::success([
-                    'exists' => true,
-                    'status' => 'generating',
-                    'summary' => '',
-                    'model' => $selectedModelConfiguration['model_display'],
-                    'model_name' => $selectedModelConfiguration['model_name'],
-                    'message' => '该文章正在生成摘要，请稍候...'
-                ]);
-                return;
+        if ($existingSummaryRecord) {
+            if ($existingSummaryRecord['status'] === 'generating') {
+                $timeElapsedSinceUpdate = time() - intval($existingSummaryRecord['updated_at']);
+                if ($timeElapsedSinceUpdate < $requestTimeoutLimit) {
+                    self::success([
+                        'exists' => true,
+                        'status' => 'generating',
+                        'summary' => '',
+                        'model' => $selectedModelConfiguration['model_display'],
+                        'model_name' => $selectedModelConfiguration['model_name'],
+                        'message' => '该文章正在生成摘要，请稍候...'
+                    ]);
+                    return;
+                }
             }
         }
 
@@ -234,7 +252,7 @@ class DearTheme_AiSummary
             return;
         }
 
-        $articleDataRow = $database->fetchRow($database->select('cid', 'title', 'text')->from('table.contents')->where('cid = ?', $contentId));
+        $articleDataRow = $databaseConnection->fetchRow($databaseConnection->select('cid', 'title', 'text')->from('table.contents')->where('cid = ?', $contentId));
         if (!$articleDataRow) {
             self::error('文章不存在', 404);
             return;
@@ -245,11 +263,11 @@ class DearTheme_AiSummary
 
         if ($existingSummaryRecord) {
             $previousSummaryStatus = $existingSummaryRecord['status'];
-            $database->query($database->update('table.dear_ai_summaries')
+            $databaseConnection->query($databaseConnection->update('table.dear_ai_summaries')
                 ->rows(['status' => 'generating', 'error_message' => '', 'updated_at' => $currentTimestamp])
                 ->where('cid = ?', $contentId)->where('model_name = ?', $selectedModelConfiguration['model_name']));
         } else {
-            $database->query($database->insert('table.dear_ai_summaries')->rows([
+            $databaseConnection->query($databaseConnection->insert('table.dear_ai_summaries')->rows([
                 'cid' => $contentId,
                 'model_name' => $selectedModelConfiguration['model_name'],
                 'model_display_name' => $selectedModelConfiguration['model_display'],
@@ -261,7 +279,24 @@ class DearTheme_AiSummary
             ]));
         }
 
-        $database->query($database->insert('table.dear_ai_rate_log')->rows(['cid' => $contentId, 'request_time' => $currentTimestamp]));
+        $databaseConnection->query($databaseConnection->insert('table.dear_ai_rate_log')->rows(['cid' => $contentId, 'request_time' => $currentTimestamp]));
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
+        $isAsynchronousExecutionSupported = function_exists('fastcgi_finish_request');
+
+        if ($isAsynchronousExecutionSupported) {
+            self::success([
+                'exists' => true,
+                'model' => $selectedModelConfiguration['model_display'],
+                'model_name' => $selectedModelConfiguration['model_name'],
+                'status' => 'generating',
+                'updated_at' => $currentTimestamp
+            ]);
+            fastcgi_finish_request();
+        }
 
         $systemPromptText = $themeOptions->Dear_aiPrompt;
         if (empty($systemPromptText)) {
@@ -272,7 +307,7 @@ class DearTheme_AiSummary
 
         try {
             $generatedResultString = self::callOpenAI($selectedModelConfiguration, $systemPromptText, $combinedUserMessage, $requestTimeoutLimit);
-            $database->query($database->update('table.dear_ai_summaries')->rows([
+            $databaseConnection->query($databaseConnection->update('table.dear_ai_summaries')->rows([
                 'summary' => $generatedResultString,
                 'model_display_name' => $selectedModelConfiguration['model_display'],
                 'status' => 'completed',
@@ -280,29 +315,34 @@ class DearTheme_AiSummary
                 'updated_at' => time()
             ])->where('cid = ?', $contentId)->where('model_name = ?', $selectedModelConfiguration['model_name']));
 
-            self::success([
-                'exists' => true,
-                'summary' => $generatedResultString,
-                'model' => $selectedModelConfiguration['model_display'],
-                'model_name' => $selectedModelConfiguration['model_name'],
-                'status' => 'completed',
-                'updated_at' => time()
-            ]);
+            if ($isAsynchronousExecutionSupported === false) {
+                self::success([
+                    'exists' => true,
+                    'summary' => $generatedResultString,
+                    'model' => $selectedModelConfiguration['model_display'],
+                    'model_name' => $selectedModelConfiguration['model_name'],
+                    'status' => 'completed',
+                    'updated_at' => time()
+                ]);
+            }
         } catch (\Exception $exception) {
             if ($previousSummaryStatus === 'completed') {
-                $database->query($database->update('table.dear_ai_summaries')->rows([
+                $databaseConnection->query($databaseConnection->update('table.dear_ai_summaries')->rows([
                     'status' => 'completed',
                     'error_message' => '',
                     'updated_at' => time()
                 ])->where('cid = ?', $contentId)->where('model_name = ?', $selectedModelConfiguration['model_name']));
             } else {
-                $database->query($database->update('table.dear_ai_summaries')->rows([
+                $databaseConnection->query($databaseConnection->update('table.dear_ai_summaries')->rows([
                     'status' => 'error',
                     'error_message' => $exception->getMessage(),
                     'updated_at' => time()
                 ])->where('cid = ?', $contentId)->where('model_name = ?', $selectedModelConfiguration['model_name']));
             }
-            self::error('AI请求失败: ' . $exception->getMessage(), 502);
+
+            if ($isAsynchronousExecutionSupported === false) {
+                self::error('AI请求失败: ' . $exception->getMessage(), 502);
+            }
         }
     }
 
