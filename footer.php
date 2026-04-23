@@ -393,5 +393,222 @@ $headingToggle = is_null($this->options->Dear_headingToggle) ? '0' : $this->opti
         });
     </script>
 <?php endif; ?>
+<?php
+$aiEnabledFooter = !is_null($this->options->Dear_aiEnabled) && $this->options->Dear_aiEnabled == '1';
+if (($this->is('post')) && $aiEnabledFooter):
+    ?>
+    <script type="text/javascript">
+        (function () {
+            const box = document.getElementById("ai-summary-box");
+            if (!box) return;
+
+            const cid = box.dataset.cid;
+            const textEl = document.getElementById("ai-summary-text");
+            const contentEl = document.getElementById("ai-summary-content");
+            const expandBtn = document.getElementById("ai-summary-expand-btn");
+            const toggleBtn = document.getElementById("ai-summary-toggle-btn");
+            const closeBtn = document.getElementById("ai-close-btn");
+            const copyBtn = document.getElementById("ai-copy-btn");
+            const regenBtn = document.getElementById("ai-regenerate-btn");
+            const modelBtn = document.getElementById("ai-model-select-btn");
+            const modelCurrent = document.getElementById("ai-model-current");
+            const modelDropdown = document.getElementById("ai-model-dropdown");
+            const timeLabel = document.getElementById("ai-summary-time");
+
+            let currentSummary = "";
+            let isExpanded = false;
+            let modelsList = [];
+            let selectedModelIndex = 0;
+
+            function api(action, extra) {
+                let u = "/?dear_ai_action=" + action + "&cid=" + cid;
+                if (extra) u += "&" + extra;
+                return u;
+            }
+
+            function showBox() {
+                box.style.display = "block";
+                if (toggleBtn) toggleBtn.querySelector("span").textContent = "隐藏AI摘要";
+            }
+            function hideBox() {
+                box.style.display = "none";
+                if (toggleBtn) toggleBtn.querySelector("span").textContent = "AI摘要";
+            }
+
+            function formatTime(ts) {
+                if (!ts) return "";
+                const d = new Date(ts * 1000);
+                const pad = n => String(n).padStart(2, "0");
+                return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+            }
+
+            function setStatus(msg, isError) {
+                textEl.textContent = msg;
+                textEl.style.color = isError ? "var(--gray-color)" : "";
+                contentEl.classList.remove("ai-summary-collapsed");
+                expandBtn.style.display = "none";
+                timeLabel.textContent = "生成时间未知";
+                isExpanded = true;
+            }
+
+            function setSummary(text, model, updatedAt) {
+                currentSummary = text;
+                textEl.textContent = text;
+                textEl.style.color = "";
+                if (model) modelCurrent.textContent = model;
+                timeLabel.textContent = updatedAt ? "生成时间：" + formatTime(updatedAt) : "生成时间未知";
+
+                requestAnimationFrame(function () {
+                    const lineH = parseFloat(getComputedStyle(textEl).lineHeight) || 20;
+                    if (textEl.scrollHeight > lineH * 2.5) {
+                        contentEl.classList.add("ai-summary-collapsed");
+                        expandBtn.style.display = "block";
+                        expandBtn.textContent = "展开全文 ▼";
+                        isExpanded = false;
+                    } else {
+                        contentEl.classList.remove("ai-summary-collapsed");
+                        expandBtn.style.display = "none";
+                        isExpanded = true;
+                    }
+                });
+            }
+
+            function currentModelName() {
+                return modelsList.length > 0 ? modelsList[selectedModelIndex].name : "";
+            }
+
+            function fetchForModel(modelName, autoGenerate) {
+                setStatus("正在加载摘要...", false);
+                showBox();
+                fetch(api("get", "model_name=" + encodeURIComponent(modelName)))
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.ok && data.exists) {
+                            if (data.status === "completed" && data.summary) {
+                                setSummary(data.summary, data.model, data.updated_at);
+                            } else if (data.status === "generating") {
+                                setStatus("正在生成摘要，请稍候...", false);
+                                setTimeout(() => pollStatus(modelName), 3000);
+                            } else if (data.status === "error") {
+                                setStatus("摘要生成失败: " + (data.error || "未知错误"), true);
+                            } else if (autoGenerate) {
+                                generateSummary();
+                            }
+                        } else if (autoGenerate) {
+                            generateSummary();
+                        } else {
+                            setStatus("该模型暂无缓存摘要，点击重新生成", false);
+                        }
+                    })
+                    .catch(() => setStatus("网络错误", true));
+            }
+
+            function generateSummary() {
+                setStatus("正在请求 AI 生成摘要...", false);
+                fetch(api("generate", "model_index=" + selectedModelIndex))
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.ok) {
+                            if (data.status === "completed" && data.summary) {
+                                setSummary(data.summary, data.model, data.updated_at);
+                            } else if (data.status === "generating") {
+                                setStatus("该文章正在生成摘要，请稍候...", false);
+                                setTimeout(() => pollStatus(currentModelName()), 3000);
+                            }
+                        } else {
+                            setStatus(data.error || "生成失败", true);
+                        }
+                    })
+                    .catch(() => setStatus("网络错误", true));
+            }
+
+            function pollStatus(modelName) {
+                fetch(api("get", "model_name=" + encodeURIComponent(modelName)))
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.ok && data.exists) {
+                            if (data.status === "completed" && data.summary) {
+                                setSummary(data.summary, data.model, data.updated_at);
+                            } else if (data.status === "generating") {
+                                setTimeout(() => pollStatus(modelName), 3000);
+                            } else if (data.status === "error") {
+                                setStatus("摘要生成失败: " + (data.error || ""), true);
+                            }
+                        }
+                    });
+            }
+
+            function renderDropdown() {
+                modelDropdown.innerHTML = "";
+                modelsList.forEach(function (m, i) {
+                    const item = document.createElement("div");
+                    item.className = "ai-model-dropdown-item" + (i === selectedModelIndex ? " active" : "");
+                    item.textContent = m.display;
+                    item.addEventListener("click", function (e) {
+                        e.stopPropagation();
+                        modelDropdown.style.display = "none";
+                        if (i === selectedModelIndex) return;
+                        selectedModelIndex = i;
+                        modelCurrent.textContent = m.display;
+                        fetchForModel(m.name, false);
+                    });
+                    modelDropdown.appendChild(item);
+                });
+            }
+
+            // 初始化：先加载模型列表
+            fetch(api("models").replace("&cid=" + cid, ""))
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok && data.models && data.models.length > 0) {
+                        modelsList = data.models;
+                        selectedModelIndex = 0;
+                        modelCurrent.textContent = modelsList[0].display;
+                        renderDropdown();
+                        fetchForModel(modelsList[0].name, true);
+                    } else {
+                        setStatus("未配置 AI 模型", true);
+                        showBox();
+                    }
+                })
+                .catch(() => { setStatus("无法加载模型列表", true); showBox(); });
+
+            // 事件绑定
+            if (toggleBtn) toggleBtn.addEventListener("click", function () {
+                box.style.display === "none" ? showBox() : hideBox();
+            });
+            if (closeBtn) closeBtn.addEventListener("click", hideBox);
+
+            if (expandBtn) expandBtn.addEventListener("click", function () {
+                if (isExpanded) {
+                    contentEl.classList.add("ai-summary-collapsed");
+                    expandBtn.textContent = "展开全文 ▼";
+                    isExpanded = false;
+                } else {
+                    contentEl.classList.remove("ai-summary-collapsed");
+                    expandBtn.textContent = "收起 ▲";
+                    isExpanded = true;
+                }
+            });
+
+            if (copyBtn) copyBtn.addEventListener("click", function () {
+                if (currentSummary) navigator.clipboard.writeText(currentSummary).then(function () {
+                    copyBtn.title = "已复制!";
+                    setTimeout(function () { copyBtn.title = "复制摘要"; }, 2000);
+                });
+            });
+
+            if (regenBtn) regenBtn.addEventListener("click", generateSummary);
+
+            if (modelBtn) {
+                modelBtn.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    modelDropdown.style.display = modelDropdown.style.display === "none" ? "block" : "none";
+                });
+            }
+            document.addEventListener("click", function () { modelDropdown.style.display = "none"; });
+        })();
+    </script>
+<?php endif; ?>
 
 </html>

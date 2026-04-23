@@ -75,10 +75,54 @@ $this->need('header.php');
 <?php } else {
     if ($this->is('single')): ?>
         <h1><?php $this->title() ?></h1>
-        <?php if ($this->is('post')): ?>
-            <p><?php $this->category(','); ?> · <time datetime="<?php $this->date('c'); ?>"
-                    itemprop="datePublished"><?php $this->date(); ?></time></p><?php endif; ?>
+        <?php if ($this->is('post')):
+            $aiEnabled = !is_null($this->options->Dear_aiEnabled) && $this->options->Dear_aiEnabled == '1';
+        ?>
+            <p class="post-meta-line">
+                <?php $this->category(','); ?> · <time datetime="<?php $this->date('c'); ?>"
+                    itemprop="datePublished"><?php $this->date(); ?></time>
+                <?php if ($aiEnabled): ?>
+                    <button type="button" id="ai-summary-toggle-btn" class="ai-summary-toggle-btn" title="显示/隐藏AI摘要">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M12 2a4 4 0 0 1 4 4v1a3 3 0 0 1 3 3v1a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-1a3 3 0 0 1 3-3V6a4 4 0 0 1 4-4z"/><line x1="9" y1="18" x2="9" y2="22"/><line x1="15" y1="18" x2="15" y2="22"/><line x1="7" y1="22" x2="17" y2="22"/></svg>
+                        <span>AI摘要</span>
+                    </button>
+                <?php endif; ?>
+            </p>
+            <?php if ($aiEnabled): ?>
+            <div id="ai-summary-box" class="ai-summary-box" style="display:none;" data-cid="<?php echo $this->cid; ?>">
+                <div class="ai-summary-header">
+                    <div class="ai-summary-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v1a3 3 0 0 1 3 3v1a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-1a3 3 0 0 1 3-3V6a4 4 0 0 1 4-4z"/><line x1="9" y1="18" x2="9" y2="22"/><line x1="15" y1="18" x2="15" y2="22"/><line x1="7" y1="22" x2="17" y2="22"/></svg>
+                        AI 摘要
+                        <div class="ai-model-select-wrapper">
+                            <button type="button" id="ai-model-select-btn" class="ai-model-select-btn">
+                                <span id="ai-model-current"></span> ▾
+                            </button>
+                            <div id="ai-model-dropdown" class="ai-model-dropdown" style="display:none;"></div>
+                        </div>
+                        <span id="ai-summary-time" class="ai-summary-time-label"></span>
+                    </div>
+                    <div class="ai-summary-actions">
+                        <button type="button" id="ai-regenerate-btn" class="ai-summary-action-btn" title="重新生成">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        </button>
+                        <button type="button" id="ai-copy-btn" class="ai-summary-action-btn" title="复制摘要">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        </button>
+                        <button type="button" id="ai-close-btn" class="ai-summary-action-btn" title="关闭">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="ai-summary-content" class="ai-summary-content ai-summary-collapsed">
+                    <p id="ai-summary-text"></p>
+                </div>
+                <button type="button" id="ai-summary-expand-btn" class="ai-summary-expand-btn" style="display:none;">展开全文 ▼</button>
+            </div>
+            <?php endif; ?>
+        <?php endif; ?>
         <div id="gallery"><?php $this->content(); ?></div>
+
         <?php if ($this->is('post')): ?>
             <p># <?php $this->tags(', ', true, '无标签'); ?></p><?php endif; ?>
         <p><br /><?php if ($enableComments) {

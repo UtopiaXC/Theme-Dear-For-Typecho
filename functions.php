@@ -1,6 +1,12 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__'))
     exit;
+// AI 摘要 AJAX 请求拦截
+if (isset($_GET['dear_ai_action'])) {
+    require_once dirname(__FILE__) . '/asset/php/ai-summary-handler.php';
+    DearTheme_AiSummary::handleRequest();
+}
+
 // 文章数设置
 function themeInit($archive)
 {
@@ -254,6 +260,108 @@ function themeConfig($form)
 
     $Dear_unGroupedLinks = new Typecho_Widget_Helper_Form_Element_Text('Dear_unGroupedLinks', NULL, '未分类', _t('默认友情链接分组名'), _t('如果没有正确指定type的友链将被统一放置到此名称下'));
     $form->addInput($Dear_unGroupedLinks);
+
+    $Dear_aiEnabled = new Typecho_Widget_Helper_Form_Element_Radio('Dear_aiEnabled', array('1' => _t('启用'), '0' => _t('关闭')), '0', _t('<div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 35px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">AI 摘要</div>启用 AI 摘要'), _t('开启后文章阅读页会显示 AI 生成的摘要'));
+    $form->addInput($Dear_aiEnabled);
+
+    $defaultModels = json_encode([['api_url' => '', 'api_key' => '', 'model_display' => '', 'model_name' => '']], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    $Dear_aiModels = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_aiModels', NULL, $defaultModels, _t('AI 模型配置（JSON）'), _t('使用 JSON 数组格式配置一个或多个模型。每个模型需包含 api_url、api_key、model_display（显示名）和 model_name（请求用名称）。可以配置多个模型，用户可在前端切换。'));
+    $form->addInput($Dear_aiModels);
+
+    $Dear_aiModelsUi = new Typecho_Widget_Helper_Layout('div');
+    $Dear_aiModelsUi->html('
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const textarea = document.querySelector("textarea[name=Dear_aiModels]");
+        if (!textarea) return;
+        const wrapper = textarea.closest("li") || textarea.parentElement;
+        const uiContainer = document.createElement("div");
+        uiContainer.id = "dear-ai-models-ui";
+        uiContainer.style.cssText = "margin: 10px 0; padding: 15px; background: #f9f9f9; border-radius: 8px; border: 1px solid #e0e0e0;";
+        textarea.parentElement.insertBefore(uiContainer, textarea);
+        textarea.style.display = "none";
+
+        function parseModels() {
+            try { return JSON.parse(textarea.value) || []; } catch(e) { return []; }
+        }
+        function saveModels(models) {
+            textarea.value = JSON.stringify(models, null, 2);
+        }
+        function render() {
+            const models = parseModels();
+            uiContainer.innerHTML = "";
+            models.forEach(function(m, i) {
+                const card = document.createElement("div");
+                card.style.cssText = "background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 10px; position: relative;";
+                card.innerHTML = \'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong>模型 #\' + (i+1) + \'</strong><button type="button" class="del-model" data-idx="\' + i + \'" style="background:#e74c3c;color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;">删除</button></div>\'
+                    + \'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">\'
+                    + \'<label style="font-size:12px;color:#666;">API URL<input type="text" class="ai-field" data-idx="\' + i + \'" data-key="api_url" value="\' + (m.api_url||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
+                    + \'<label style="font-size:12px;color:#666;">API Key<input type="text" class="ai-field" data-idx="\' + i + \'" data-key="api_key" value="\' + (m.api_key||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
+                    + \'<label style="font-size:12px;color:#666;">显示名称<input type="text" class="ai-field" data-idx="\' + i + \'" data-key="model_display" value="\' + (m.model_display||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
+                    + \'<label style="font-size:12px;color:#666;">模型名称（请求用）<input type="text" class="ai-field" data-idx="\' + i + \'" data-key="model_name" value="\' + (m.model_name||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
+                    + \'</div>\';
+                uiContainer.appendChild(card);
+            });
+            const addBtn = document.createElement("button");
+            addBtn.type = "button";
+            addBtn.textContent = "+ 添加模型";
+            addBtn.style.cssText = "background:#467b96;color:#fff;border:none;border-radius:4px;padding:8px 16px;cursor:pointer;";
+            addBtn.addEventListener("click", function() {
+                const models = parseModels();
+                models.push({api_url:\'\',api_key:\'\',model_display:\'\',model_name:\'\'});
+                saveModels(models);
+                render();
+            });
+            uiContainer.appendChild(addBtn);
+            const showJsonBtn = document.createElement("button");
+            showJsonBtn.type = "button";
+            showJsonBtn.textContent = "显示/编辑 JSON";
+            showJsonBtn.style.cssText = "background:#999;color:#fff;border:none;border-radius:4px;padding:8px 16px;cursor:pointer;margin-left:8px;";
+            showJsonBtn.addEventListener("click", function() {
+                textarea.style.display = textarea.style.display === "none" ? "block" : "none";
+            });
+            uiContainer.appendChild(showJsonBtn);
+
+            uiContainer.querySelectorAll(".ai-field").forEach(function(inp) {
+                inp.addEventListener("input", function() {
+                    const models = parseModels();
+                    const idx = parseInt(this.dataset.idx);
+                    if (models[idx]) {
+                        models[idx][this.dataset.key] = this.value;
+                        saveModels(models);
+                    }
+                });
+            });
+            uiContainer.querySelectorAll(".del-model").forEach(function(btn) {
+                btn.addEventListener("click", function() {
+                    const models = parseModels();
+                    models.splice(parseInt(this.dataset.idx), 1);
+                    saveModels(models);
+                    render();
+                });
+            });
+        }
+        render();
+    });
+    </script>
+    ');
+    $form->addItem($Dear_aiModelsUi);
+
+    require_once dirname(__FILE__) . '/asset/php/ai-summary-handler.php';
+    $Dear_aiPrompt = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_aiPrompt', NULL, DearTheme_AiSummary::defaultPrompt(), _t('AI 摘要 Prompt'), _t('自定义发送给 AI 的系统提示词，用于控制摘要的风格与长度'));
+    $form->addInput($Dear_aiPrompt);
+
+    $Dear_aiGlobalRateMinutes = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiGlobalRateMinutes', NULL, '60', _t('全局速率限制 - 时间窗口（分钟）'), _t(''));
+    $form->addInput($Dear_aiGlobalRateMinutes);
+
+    $Dear_aiGlobalRateMax = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiGlobalRateMax', NULL, '1000', _t('全局速率限制 - 最大请求次数'), _t('在上面设定的时间窗口内，所有文章合计最多允许请求的次数'));
+    $form->addInput($Dear_aiGlobalRateMax);
+
+    $Dear_aiArticleRateMinutes = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiArticleRateMinutes', NULL, '1', _t('单文章速率限制 - 时间窗口（分钟）'), _t(''));
+    $form->addInput($Dear_aiArticleRateMinutes);
+
+    $Dear_aiArticleRateMax = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiArticleRateMax', NULL, '5', _t('单文章速率限制 - 最大请求次数'), _t('在上面设定的时间窗口内，单篇文章最多允许请求的次数'));
+    $form->addInput($Dear_aiArticleRateMax);
 
     $Dear_customCss = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_customCss', NULL, '', _t('<div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 35px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">高级自定义</div>自定义CSS'), _t('在这里填入自定义CSS代码，直接写入CSS即可，主题会自动加上&lt;style&gt;标签'));
     $form->addInput($Dear_customCss);
