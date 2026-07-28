@@ -44,6 +44,9 @@ if (!preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $bgColorDark)) {
     <?php if ($isAiSummaryFeatureEnabled): ?>
         <link rel="stylesheet" href="<?php $this->options->themeUrl('./asset/css/ai-summary.css'); ?>">
     <?php endif; ?>
+    <?php if ($this->is('post')): ?>
+        <link rel="stylesheet" href="<?php $this->options->themeUrl('./asset/css/article-footer.css'); ?>">
+    <?php endif; ?>
     <?php if ($enableHighlightjs): ?>
         <link id="hljs-theme" rel="stylesheet"
             href="<?php $this->options->themeUrl('/asset/css/highlightjs/default.min.css'); ?>">

@@ -6,6 +6,7 @@ if (isset($_GET['dear_ai_action'])) {
     require_once dirname(__FILE__) . '/asset/php/ai-summary-handler.php';
     DearTheme_AiSummary::handleRequest();
 }
+require_once dirname(__FILE__) . '/asset/php/article-footer-render.php';
 
 // 文章数设置
 function themeInit($archive)
@@ -36,9 +37,135 @@ function themeFields($layout)
         _t('默认关闭增加网页访问速度，如文章内存在LaTeX语法则需要启用')
     );
     $layout->addItem($isLatex);
+
+    $showBadges = new Typecho_Widget_Helper_Form_Element_Select(
+        'showBadges',
+        array(
+            'default' => _t('跟随全局'),
+            '1' => _t('开启'),
+            '0' => _t('关闭')
+        ),
+        'default',
+        _t('显示文章徽章'),
+        _t('跟随全局设置或单独控制本文的徽章区域显示')
+    );
+    $layout->addItem($showBadges);
+
+    $showCopyright = new Typecho_Widget_Helper_Form_Element_Select(
+        'showCopyright',
+        array(
+            'default' => _t('跟随全局'),
+            '1' => _t('开启'),
+            '0' => _t('关闭')
+        ),
+        'default',
+        _t('显示版权声明'),
+        _t('跟随全局设置或单独控制本文的版权声明区域显示')
+    );
+    $layout->addItem($showCopyright);
+
+    $articleBadges = new Typecho_Widget_Helper_Form_Element_Textarea(
+        'articleBadges',
+        NULL,
+        '',
+        _t('文章徽章'),
+        _t('选择本文要显示的徽章（留空则使用全局默认值）')
+    );
+    $layout->addItem($articleBadges);
+
+    $articleCopyright = new Typecho_Widget_Helper_Form_Element_Textarea(
+        'articleCopyright',
+        NULL,
+        '',
+        _t('文章版权声明'),
+        _t('选择本文的版权声明（留空则使用全局默认值）')
+    );
+    $layout->addItem($articleCopyright);
+
+    // Attach inline CSS and JS script directly to element container.
+    // Typecho's EditTrait::getDefaultFieldItems iterates $item->container->getItems()
+    // and includes all container items inside <div class="field-value">.
+    $options = Helper::options();
+
+    $rawBadges = $options->Dear_badgeGroups;
+    $badgeArr = !empty($rawBadges) ? json_decode($rawBadges, true) : null;
+    if (empty($badgeArr)) {
+        $badgeArr = json_decode(DearTheme_ArticleFooter::defaultBadgeGroups(), true);
+    }
+    $badgeJson = json_encode($badgeArr, JSON_UNESCAPED_UNICODE);
+
+    $rawCopyright = $options->Dear_copyrightPresets;
+    $copyrightArr = !empty($rawCopyright) ? json_decode($rawCopyright, true) : null;
+    if (empty($copyrightArr)) {
+        $copyrightArr = json_decode(DearTheme_ArticleFooter::defaultCopyrightPresets(), true);
+    }
+    $copyrightJson = json_encode($copyrightArr, JSON_UNESCAPED_UNICODE);
+
+    $jsPath = __DIR__ . '/asset/js/article-badge-selector.js';
+    $jsCode = file_exists($jsPath) ? file_get_contents($jsPath) : '';
+
+    $ui = new Typecho_Widget_Helper_Layout('div');
+    $ui->html('
+    <style>
+        #custom-field .fields .field { display: flex; flex-wrap: wrap; align-items: flex-start; padding: 12px 0; border-bottom: 1px dashed #eee; }
+        #custom-field .field-name { width: 140px; font-weight: 600; color: #333; font-size: 13px; flex-shrink: 0; padding-top: 4px; }
+        #custom-field .field-value { flex: 1; min-width: 0; }
+        #custom-field select { display: inline-block; padding: 6px 12px; border: 1px solid #ccc; border-radius: 6px; background: #fff; font-size: 13px; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 6px; }
+        #custom-field select:focus { border-color: #467b96; box-shadow: 0 0 0 2px rgba(70,123,150,0.2); }
+        #custom-field .description { display: block; font-size: 12px; color: #888; margin-top: 6px; margin-bottom: 4px; line-height: 1.5; clear: both; }
+    </style>
+    <script>
+        window.dearBadgeGroups = ' . $badgeJson . ';
+        window.dearCopyrightPresets = ' . $copyrightJson . ';
+    </script>
+    <script>
+    ' . $jsCode . '
+    </script>
+    ');
+
+    $articleCopyright->container->addItem($ui);
 }
 
 Typecho_Plugin::factory('admin/menu.php')->navBar = array('DearTheme_Menu', 'render');
+// Inject article editor badge/copyright selector via write-post/write-page and footer hooks
+\Typecho\Plugin::factory('admin/write-post.php')->bottom = array('DearTheme_AdminFooter', 'inject');
+\Typecho\Plugin::factory('admin/write-page.php')->bottom = array('DearTheme_AdminFooter', 'inject');
+\Typecho\Plugin::factory('admin/footer.php')->end = array('DearTheme_AdminFooter', 'inject');
+
+class DearTheme_AdminFooter
+{
+    public static function inject()
+    {
+        $options = Helper::options();
+
+        $rawBadges = $options->Dear_badgeGroups;
+        $badgeArr = !empty($rawBadges) ? json_decode($rawBadges, true) : null;
+        if (empty($badgeArr)) {
+            $badgeArr = json_decode(DearTheme_ArticleFooter::defaultBadgeGroups(), true);
+        }
+        $badgeJson = json_encode($badgeArr, JSON_UNESCAPED_UNICODE);
+
+        $rawCopyright = $options->Dear_copyrightPresets;
+        $copyrightArr = !empty($rawCopyright) ? json_decode($rawCopyright, true) : null;
+        if (empty($copyrightArr)) {
+            $copyrightArr = json_decode(DearTheme_ArticleFooter::defaultCopyrightPresets(), true);
+        }
+        $copyrightJson = json_encode($copyrightArr, JSON_UNESCAPED_UNICODE);
+
+        $themeUrl = rtrim($options->siteUrl, '/') . '/usr/themes/' . $options->theme;
+
+        echo '<style>
+        #custom-field .fields .field { display: flex; flex-wrap: wrap; align-items: flex-start; padding: 12px 0; border-bottom: 1px dashed #eee; }
+        #custom-field .field-name { width: 140px; font-weight: 600; color: #333; font-size: 13px; flex-shrink: 0; padding-top: 4px; }
+        #custom-field .field-value { flex: 1; min-width: 0; }
+        #custom-field select { padding: 6px 12px; border: 1px solid #ccc; border-radius: 6px; background: #fff; font-size: 13px; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        #custom-field select:focus { border-color: #467b96; box-shadow: 0 0 0 2px rgba(70,123,150,0.2); }
+        </style>' . "\n";
+        echo '<script>window.dearBadgeGroups=' . $badgeJson . '; window.dearCopyrightPresets=' . $copyrightJson . ';</script>' . "\n";
+        echo '<script src="' . $themeUrl . '/asset/js/article-badge-selector.js"></script>' . "\n";
+    }
+}
+
 class DearTheme_Menu
 {
     public static function render()
@@ -368,6 +495,28 @@ function themeConfig($form)
 
     $Dear_aiArticleRateMax = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiArticleRateMax', NULL, '5', _t('单文章速率限制 每时间窗口内最大请求次数'), _t('在上面设定的时间窗口内，单篇文章最多允许请求的次数，即每多少分钟最多多少次请求。'));
     $form->addInput($Dear_aiArticleRateMax);
+
+    $Dear_badgesEnabled = new Typecho_Widget_Helper_Form_Element_Radio('Dear_badgesEnabled', array('1' => _t('启用'), '0' => _t('关闭')), '1', _t('<div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 35px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">徽章与版权</div>是否启用自定义徽章区'), _t('在文章底部显示自定义徽章（如AI写作声明、媒体信息等）'));
+    $form->addInput($Dear_badgesEnabled);
+
+    $Dear_badgeGroups = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_badgeGroups', NULL, DearTheme_ArticleFooter::defaultBadgeGroups(), _t('自定义徽章组配置'), _t('配置所有可用的徽章组和徽章。每个组可以设置为单选或多选模式。'));
+    $form->addInput($Dear_badgeGroups);
+
+    $Dear_badgesDefault = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_badgesDefault', NULL, '[]', _t('默认选中的徽章'), _t('新文章默认显示的徽章，如果文章没有单独设置则使用此默认值。'));
+    $form->addInput($Dear_badgesDefault);
+
+    $Dear_copyrightEnabled = new Typecho_Widget_Helper_Form_Element_Radio('Dear_copyrightEnabled', array('1' => _t('启用'), '0' => _t('关闭')), '1', _t('是否启用版权声明区'), _t('在文章底部显示版权声明'));
+    $form->addInput($Dear_copyrightEnabled);
+
+    $Dear_copyrightPresets = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_copyrightPresets', NULL, DearTheme_ArticleFooter::defaultCopyrightPresets(), _t('版权/许可协议预设'), _t('配置所有可用的版权和代码许可协议预设。'));
+    $form->addInput($Dear_copyrightPresets);
+
+    $Dear_copyrightDefault = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_copyrightDefault', NULL, '{}', _t('默认选中的版权声明'), _t('新文章默认显示的版权声明，如果文章没有单独设置则使用此默认值。'));
+    $form->addInput($Dear_copyrightDefault);
+
+    $Dear_badgeCopyrightAdminUi = new Typecho_Widget_Helper_Layout('div');
+    $Dear_badgeCopyrightAdminUi->html('<script src="' . Helper::options()->themeUrl . '/asset/js/badge-copyright-admin.js"></script>');
+    $form->addItem($Dear_badgeCopyrightAdminUi);
 
     $Dear_customCss = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_customCss', NULL, '', _t('<div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 35px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">自定义</div>自定义CSS'), _t('在这里填入自定义CSS代码，直接写入CSS即可，主题会自动加上&lt;style&gt;标签'));
     $form->addInput($Dear_customCss);

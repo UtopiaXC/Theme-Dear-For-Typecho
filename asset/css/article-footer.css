@@ -1,0 +1,333 @@
+/* ============================================
+   Article Footer — Badges & Copyright System
+   ============================================ */
+
+.article-footer-wrapper {
+    max-width: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-top: 40px;
+    margin-bottom: 10px;
+}
+
+/* --- Metadata (date, author, location) --- */
+
+.article-metadata-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    padding-right: 16px;
+    border-right: 3px solid var(--link-color, #3273dc);
+    color: var(--gray-color, #999);
+    font-size: 13px;
+    letter-spacing: 0.5px;
+}
+
+.metadata-author-text {
+    color: var(--heading-color, #222);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* --- Badge Groups (custom badges area) --- */
+
+.article-badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 16px 0;
+    border-top: 1px dashed var(--gray-color, #999);
+    border-bottom: 1px dashed var(--gray-color, #999);
+    position: relative;
+}
+
+.badge-group {
+    display: inline-flex;
+    border-radius: 4px;
+    font-size: 0;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: help;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(128, 128, 128, 0.25);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.badge-group:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    border-bottom: none;
+}
+
+a.badge-group {
+    cursor: pointer;
+}
+
+.badge-label {
+    background-color: #333333;
+    color: #ffffff;
+    padding: 4px 8px;
+    border-right: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 3px 0 0 3px;
+    white-space: nowrap;
+    font-size: 11px;
+}
+
+.badge-value {
+    padding: 4px 8px;
+    color: #ffffff;
+    border-radius: 0 3px 3px 0;
+    white-space: nowrap;
+    font-size: 11px;
+}
+
+/* Badge with only label (no value) */
+.badge-group .badge-label:only-child {
+    border-right: none;
+    border-radius: 3px;
+}
+
+/* --- Copyright Notice --- */
+
+.copyright-notice-container {
+    background-color: rgba(128, 128, 128, 0.06);
+    border-left: 4px solid var(--link-color, #3273dc);
+    border-radius: 4px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.copyright-information-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.copyright-title-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--heading-color, #222);
+}
+
+.license-and-badges-section {
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(128, 128, 128, 0.08);
+    padding: 16px;
+    border-radius: 6px;
+    gap: 16px;
+    position: relative;
+}
+
+.license-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.license-declaration-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-color, #444);
+}
+
+.license-badges-container {
+    display: inline-flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.license-badge-item {
+    background-color: rgba(128, 128, 128, 0.15);
+    border: 1px solid rgba(128, 128, 128, 0.25);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: help;
+    position: relative;
+    color: var(--heading-color, #222);
+    transition: background-color 0.15s ease;
+}
+
+.license-badge-item:hover {
+    background-color: rgba(128, 128, 128, 0.25);
+}
+
+a.license-badge-item {
+    text-decoration: none;
+    color: var(--heading-color, #222);
+    cursor: pointer;
+    border-bottom: none;
+}
+
+a.license-badge-item:hover {
+    border-bottom: none;
+}
+
+/* --- Tooltip (shared) --- */
+
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--heading-color, #222);
+    color: var(--code-background-color, #fff);
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease-in-out;
+    z-index: 100;
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-weight: normal;
+    letter-spacing: normal;
+    pointer-events: none;
+    max-width: min(400px, 80vw);
+    white-space: normal;
+    text-align: center;
+    line-height: 1.5;
+    width: max-content;
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+    bottom: calc(100% + 12px);
+}
+
+/* Tooltip arrow */
+[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--heading-color, #222);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease-in-out;
+    z-index: 101;
+    pointer-events: none;
+}
+
+[data-tooltip]:hover::before {
+    opacity: 1;
+    visibility: visible;
+    bottom: calc(100% + 8px);
+}
+
+/* --- Dark Mode Adjustments --- */
+
+@media (prefers-color-scheme: dark) {
+    .badge-label {
+        background-color: #2a2a2a;
+    }
+
+    .copyright-notice-container {
+        background-color: rgba(255, 255, 255, 0.04);
+    }
+
+    .license-and-badges-section {
+        background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .license-badge-item {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .license-badge-item:hover {
+        background-color: rgba(255, 255, 255, 0.18);
+    }
+}
+
+html[data-theme="dark"] .badge-label {
+    background-color: #2a2a2a;
+}
+
+html[data-theme="dark"] .copyright-notice-container {
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+html[data-theme="dark"] .license-and-badges-section {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="dark"] .license-badge-item {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+html[data-theme="dark"] .license-badge-item:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+}
+
+/* --- Responsive --- */
+
+@media screen and (max-width: 480px) {
+    .article-footer-wrapper {
+        gap: 18px;
+    }
+
+    .article-metadata-container {
+        font-size: 12px;
+        padding-right: 12px;
+    }
+
+    .copyright-notice-container {
+        padding: 14px;
+    }
+
+    .license-and-badges-section {
+        padding: 12px;
+    }
+
+    .license-row {
+        gap: 6px;
+    }
+
+    .license-declaration-text {
+        font-size: 13px;
+    }
+
+    [data-tooltip]::after {
+        max-width: min(280px, 80vw);
+        font-size: 11px;
+    }
+}
+
+/* --- Article Content p[align="right"] Styling --- */
+
+#gallery p[align="right"] {
+    text-align: right;
+    padding-right: 16px;
+    border-right: 3px solid var(--link-color, #3273dc);
+    color: var(--gray-color, #999);
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    line-height: 2;
+    margin: 2px 0;
+}
+
+#gallery p[align="right"] a {
+    color: var(--link-color, #3273dc);
+}

@@ -362,13 +362,15 @@ class DearTheme_AiSummary
             'temperature' => 0.6
         ], JSON_UNESCAPED_UNICODE);
 
+        $cleanedApiKey = trim($modelConfiguration['api_key']);
+
         $curlHandler = curl_init($apiEndpointUrl);
         curl_setopt_array($curlHandler, [
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $requestPayloadData,
             CURLOPT_HTTPHEADER     => [
                 'Content-Type: application/json',
-                'Authorization: Bearer ' . $modelConfiguration['api_key'],
+                'Authorization: Bearer ' . $cleanedApiKey,
                 'Expect:'
             ],
             CURLOPT_RETURNTRANSFER => true,

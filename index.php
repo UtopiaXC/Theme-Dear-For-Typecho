@@ -135,6 +135,11 @@ $this->need('header.php');
 
         <?php if ($this->is('post')): ?>
             <p># <?php $this->tags(', ', true, '无标签'); ?></p><?php endif; ?>
+
+        <?php if ($this->is('post')):
+            echo DearTheme_ArticleFooter::render($this, $this->options);
+        endif; ?>
+
         <p><br /><?php if ($enableComments) {
             $this->need('comments.php');
         } ?></p>
