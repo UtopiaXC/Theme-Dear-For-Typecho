@@ -2,7 +2,7 @@
 if (!defined('__TYPECHO_ROOT_DIR__'))
     exit;
 // AI 摘要 AJAX 请求拦截
-if (isset($_GET['dear_ai_action'])) {
+if (isset($_REQUEST['dear_ai_action'])) {
     require_once dirname(__FILE__) . '/asset/php/ai-summary-handler.php';
     DearTheme_AiSummary::handleRequest();
 }
@@ -176,6 +176,12 @@ class DearTheme_Menu
 
 function themeConfig($form)
 {
+    // AI摘要模型ID修改迁移检测
+    if (!empty($_POST) && isset($_POST['Dear_aiModels'])) {
+        require_once dirname(__FILE__) . '/asset/php/ai-summary-handler.php';
+        DearTheme_AiSummary::handleModelsSave($_POST['Dear_aiModels'], isset($_POST['Dear_aiModelRenames']) ? $_POST['Dear_aiModelRenames'] : null);
+    }
+
     $Dear_adminUi = new Typecho_Widget_Helper_Layout('div');
     $Dear_adminUi->html('
     <style>
@@ -397,86 +403,20 @@ function themeConfig($form)
     $Dear_aiTimeout = new Typecho_Widget_Helper_Form_Element_Text('Dear_aiTimeout', NULL, '60', _t('请求超时时间限制（秒）'), _t('用来防止队列中请求异常中止但是状态机没有改变的情况。推荐根据网络环境与模型Token吐出速度设置在60秒以上。'));
     $form->addInput($Dear_aiTimeout);
 
-    $defaultModels = json_encode([['api_url' => '', 'api_key' => '', 'model_display' => '', 'model_name' => '']], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-    $Dear_aiModels = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_aiModels', NULL, $defaultModels, _t('AI模型配置'), _t('采用标准的OpenAI API格式。每个模型需包含api_url、api_key和model_name。此外，还需要配置一个model_display用来在前端显示。可以配置多个模型，用户可在前端切换。模型1将会被设置为默认模型'));
+    $defaultModels = json_encode([['id' => 'gemini-flash-lite', 'model_name' => '', 'model_display' => '', 'api_url' => '', 'api_key' => '']], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    $Dear_aiModels = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_aiModels', NULL, $defaultModels, _t('AI模型配置'), _t('采用标准的OpenAI API格式。每个模型需包含唯一识别码id（作为数据库中存储摘要的主键，模型版本升级时保持此id不变即可规避历史摘要丢失问题）、api_url、api_key和model_name（模型调用接口名）。此外，还需要配置一个model_display用来在前端显示。可以配置多个模型，用户可在前端切换。模型1将会被设置为默认模型'));
     $form->addInput($Dear_aiModels);
 
     $Dear_aiModelsUi = new Typecho_Widget_Helper_Layout('div');
     $Dear_aiModelsUi->html('
+    <link rel="stylesheet" href="' . Helper::options()->themeUrl . '/asset/css/ai-summary-admin.css">
     <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const textarea = document.querySelector("textarea[name=Dear_aiModels]");
-        if (!textarea) return;
-        const wrapper = textarea.closest("li") || textarea.parentElement;
-        const uiContainer = document.createElement("div");
-        uiContainer.id = "dear-ai-models-ui";
-        uiContainer.style.cssText = "margin: 10px 0; padding: 15px; background: #f9f9f9; border-radius: 8px; border: 1px solid #e0e0e0;";
-        textarea.parentElement.insertBefore(uiContainer, textarea);
-        textarea.style.display = "none";
-
-        function parseModels() {
-            try { return JSON.parse(textarea.value) || []; } catch(e) { return []; }
-        }
-        function saveModels(models) {
-            textarea.value = JSON.stringify(models, null, 2);
-        }
-        function render() {
-            const models = parseModels();
-            uiContainer.innerHTML = "";
-            models.forEach(function(m, i) {
-                const card = document.createElement("div");
-                card.style.cssText = "background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 10px; position: relative;";
-                card.innerHTML = \'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong>模型 #\' + (i+1) + \'</strong><button type="button" class="del-model" data-idx="\' + i + \'" style="background:#e74c3c;color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;">删除</button></div>\'
-                    + \'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">\'
-                    + \'<label style="font-size:12px;color:#666;">API URL<input type="text" class="ai-field" data-idx="\' + i + \'" data-key="api_url" value="\' + (m.api_url||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
-                    + \'<label style="font-size:12px;color:#666;">API Key<input type="password" class="ai-field" data-idx="\' + i + \'" data-key="api_key" value="\' + (m.api_key||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
-                    + \'<label style="font-size:12px;color:#666;">模型调用名称<input type="text" class="ai-field" data-idx="\' + i + \'" data-key="model_name" value="\' + (m.model_name||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
-                    + \'<label style="font-size:12px;color:#666;">模型显示名称<input type="text" class="ai-field" data-idx="\' + i + \'" data-key="model_display" value="\' + (m.model_display||\'\') + \'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;"></label>\'
-                    + \'</div>\';
-                uiContainer.appendChild(card);
-            });
-            const addBtn = document.createElement("button");
-            addBtn.type = "button";
-            addBtn.textContent = "+ 添加模型";
-            addBtn.style.cssText = "background:#467b96;color:#fff;border:none;border-radius:4px;padding:8px 16px;cursor:pointer;";
-            addBtn.addEventListener("click", function() {
-                const models = parseModels();
-                models.push({api_url:\'\',api_key:\'\',model_display:\'\',model_name:\'\'});
-                saveModels(models);
-                render();
-            });
-            uiContainer.appendChild(addBtn);
-            const showJsonBtn = document.createElement("button");
-            showJsonBtn.type = "button";
-            showJsonBtn.textContent = "显示/编辑 JSON";
-            showJsonBtn.style.cssText = "background:#999;color:#fff;border:none;border-radius:4px;padding:8px 16px;cursor:pointer;margin-left:8px;";
-            showJsonBtn.addEventListener("click", function() {
-                textarea.style.display = textarea.style.display === "none" ? "block" : "none";
-            });
-            uiContainer.appendChild(showJsonBtn);
-
-            uiContainer.querySelectorAll(".ai-field").forEach(function(inp) {
-                inp.addEventListener("input", function() {
-                    const models = parseModels();
-                    const idx = parseInt(this.dataset.idx);
-                    if (models[idx]) {
-                        models[idx][this.dataset.key] = this.value;
-                        saveModels(models);
-                    }
-                });
-            });
-            uiContainer.querySelectorAll(".del-model").forEach(function(btn) {
-                btn.addEventListener("click", function() {
-                    const models = parseModels();
-                    models.splice(parseInt(this.dataset.idx), 1);
-                    saveModels(models);
-                    render();
-                });
-            });
-        }
-        render();
-    });
+    window.DearAiAdminConfig = {
+        apiEndpoint: "' . Helper::options()->index . '",
+        themeUrl: "' . Helper::options()->themeUrl . '"
+    };
     </script>
+    <script src="' . Helper::options()->themeUrl . '/asset/js/ai-summary-admin.js"></script>
     ');
     $form->addItem($Dear_aiModelsUi);
 
@@ -574,8 +514,14 @@ function themeConfig($form)
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         });
-        importBtn.addEventListener("click", function() {
-            if(confirm("警告：导入配置将覆盖当前表单中的所有内容，并在导入完成后自动保存刷新。\\n\\n是否继续导入？")) {
+        importBtn.addEventListener("click", async function() {
+            let ok = false;
+            if (window.dearConfirm) {
+                ok = await window.dearConfirm("警告：导入配置将覆盖当前表单中的所有内容，并在导入完成后自动保存刷新。\n\n是否继续导入？", "导入配置确认", true);
+            } else {
+                ok = confirm("警告：导入配置将覆盖当前表单中的所有内容，并在导入完成后自动保存刷新。\n\n是否继续导入？");
+            }
+            if (ok) {
                 importFile.click();
             }
         });
@@ -585,7 +531,7 @@ function themeConfig($form)
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const config = JSON.parse(e.target.result);
                     let importedCount = 0;
@@ -606,7 +552,11 @@ function themeConfig($form)
                     }
 
                     if (importedCount > 0) {
-                        alert("成功导入 " + importedCount + " 项配置！即将自动保存并刷新...");
+                        if (window.dearAlert) {
+                            await window.dearAlert("成功导入 " + importedCount + " 项配置！即将自动保存并刷新...", "导入成功");
+                        } else {
+                            alert("成功导入 " + importedCount + " 项配置！即将自动保存并刷新...");
+                        }
                         const submitBtn = form.querySelector("button[type=\'submit\']");
                         if (submitBtn) {
                             submitBtn.click();
@@ -614,10 +564,18 @@ function themeConfig($form)
                             form.submit();
                         }
                     } else {
-                        alert("未能从文件中识别到有效的配置项，请检查JSON文件来源。");
+                        if (window.dearAlert) {
+                            await window.dearAlert("未能从文件中识别到有效的配置项，请检查JSON文件来源。", "导入提示");
+                        } else {
+                            alert("未能从文件中识别到有效的配置项，请检查JSON文件来源。");
+                        }
                     }
                 } catch (err) {
-                    alert("导入失败：文件格式错误或并非有效的 JSON 文件！");
+                    if (window.dearAlert) {
+                        await window.dearAlert("导入失败：文件格式错误或并非有效的 JSON 文件！", "导入错误");
+                    } else {
+                        alert("导入失败：文件格式错误或并非有效的 JSON 文件！");
+                    }
                     console.error("JSON Parsing Error:", err);
                 }
                 importFile.value = "";

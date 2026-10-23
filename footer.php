@@ -501,9 +501,9 @@ if (($this->is('post')) && $aiEnabledFooter):
                 return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
             }
 
-            function fetchForModel(modelName, autoGenerate) {
+            function fetchForModel(modelId, autoGenerate) {
                 setStatus("正在加载摘要...", false);
-                fetch(api("get", "model_name=" + encodeURIComponent(modelName)))
+                fetch(api("get", "model_id=" + encodeURIComponent(modelId)))
                     .then(r => r.json())
                     .then(data => {
                         if (data.ok && data.exists) {
@@ -511,7 +511,7 @@ if (($this->is('post')) && $aiEnabledFooter):
                                 setSummary(data.summary, data.model, data.updated_at);
                             } else if (data.status === "generating") {
                                 setStatus("摘要生成中...", false);
-                                setTimeout(() => pollStatus(modelName), 3000);
+                                setTimeout(() => pollStatus(modelId), 3000);
                             } else if (autoGenerate) {
                                 generateSummary();
                             }
@@ -546,7 +546,7 @@ if (($this->is('post')) && $aiEnabledFooter):
                         }
                         selectedModelIndex = index;
                         modelCurrent.textContent = modelItem.display;
-                        fetchForModel(modelItem.name, false);
+                        fetchForModel(modelItem.id || modelItem.name, false);
                     });
 
                     modelDropdown.appendChild(dropdownItem);
@@ -555,14 +555,17 @@ if (($this->is('post')) && $aiEnabledFooter):
 
             function generateSummary() {
                 setStatus("AI正在组织语言...", false);
-                fetch(api("generate", "model_index=" + selectedModelIndex))
+                const currentModel = modelsList[selectedModelIndex];
+                const modelId = currentModel ? (currentModel.id || currentModel.name) : "";
+                fetch(api("generate", "model_index=" + selectedModelIndex + "&model_id=" + encodeURIComponent(modelId)))
                     .then(r => r.json())
                     .then(data => {
                         if (data.ok) {
                             if (data.status === "completed" && data.summary) {
                                 setSummary(data.summary, data.model, data.updated_at);
                             } else {
-                                setTimeout(() => pollStatus(data.model_name), 3000);
+                                const targetId = data.model_id || data.model_name || modelId;
+                                setTimeout(() => pollStatus(targetId), 3000);
                             }
                         } else {
                             setStatus(data.error || "请求失败", true);
@@ -571,14 +574,14 @@ if (($this->is('post')) && $aiEnabledFooter):
                     .catch(() => setStatus("请求超时或连接错误", true));
             }
 
-            function pollStatus(modelName) {
-                fetch(api("get", "model_name=" + encodeURIComponent(modelName)))
+            function pollStatus(modelId) {
+                fetch(api("get", "model_id=" + encodeURIComponent(modelId)))
                     .then(r => r.json())
                     .then(data => {
                         if (data.ok && data.exists && data.status === "completed") {
                             setSummary(data.summary, data.model, data.updated_at);
                         } else if (data.status === "generating") {
-                            setTimeout(() => pollStatus(modelName), 3000);
+                            setTimeout(() => pollStatus(modelId), 3000);
                         }
                     });
             }
@@ -593,7 +596,7 @@ if (($this->is('post')) && $aiEnabledFooter):
                         selectedModelIndex = 0;
                         modelCurrent.textContent = modelsList[0].display;
                         renderDropdown();
-                        fetchForModel(modelsList[0].name, true);
+                        fetchForModel(modelsList[0].id || modelsList[0].name, true);
                     }
                 });
 

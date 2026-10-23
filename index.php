@@ -7,7 +7,7 @@
  *
  * @package Dear-For-Typecho
  * @author Jeff Chen & UtopiaXC
- * @version 3.3.0
+ * @version 3.3.1
  * @link https://github.com/UtopiaXC/Theme-Dear-For-Typecho
  */
 if (!defined('__TYPECHO_ROOT_DIR__'))
@@ -121,7 +121,7 @@ $this->need('header.php');
                 <div id="ai-generation-confirmation-modal" class="ai-summary-modal-container">
                     <div class="ai-summary-modal-card">
                         <div class="ai-summary-modal-title">确认</div>
-                        <div class="ai-summary-modal-body">摘要生成请求速率已被限制，多次请求重新生成可能被拒绝，是否继续？</div>
+                        <div class="ai-summary-modal-body">是否重新生成摘要？</div>
                         <div class="ai-summary-modal-footer">
                             <button type="button" id="ai-generation-cancel-button" class="ai-summary-modal-button ai-summary-modal-cancel-text">取消</button>
                             <button type="button" id="ai-generation-confirm-button" class="ai-summary-modal-button ai-summary-modal-confirm-text">确认</button>
