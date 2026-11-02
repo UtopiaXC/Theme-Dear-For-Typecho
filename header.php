@@ -3,10 +3,17 @@
 $enableHighlightjs = is_null($this->options->Dear_highlight) ? false : (bool) $this->options->Dear_highlight;
 $isShowNavi = is_null($this->options->Dear_showNavi) ? true : (bool) $this->options->Dear_showNavi;
 $isShowHomeInNavi = is_null($this->options->Dear_showHomeInNavi) ? true : (bool) $this->options->Dear_showHomeInNavi;
-$isShowAllSlugInNavi = is_null($this->options->Dear_showAllSlug) ? true : (bool) $this->options->Dear_showAllSlug;
 $rawSlug = is_null($this->options->Dear_slugInNavi) ? "" : $this->options->Dear_slugInNavi;
 $customNavi = is_null($this->options->Dear_customNavi) ? "" : $this->options->Dear_customNavi;
 $slugInNavi = empty(trim($rawSlug)) ? [] : array_map('trim', explode(',', $rawSlug));
+$rawNaviItems = is_null($this->options->Dear_navigationItems) ? "" : trim($this->options->Dear_navigationItems);
+$navigationItems = [];
+if (!empty($rawNaviItems)) {
+    $decoded = json_decode($rawNaviItems, true);
+    if (is_array($decoded)) {
+        $navigationItems = $decoded;
+    }
+}
 $tocPosition = is_null($this->options->Dear_toc) ? '0' : $this->options->Dear_toc;
 $tocTextVisible = is_null($this->options->Dear_toc_text_visible) ? '0' : $this->options->Dear_toc_text_visible;
 $tocMobileBtn = is_null($this->options->Dear_toc_mobile_btn) ? '1' : $this->options->Dear_toc_mobile_btn;
@@ -455,43 +462,57 @@ if (!preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $bgColorDark)) {
                 <p>
                     <?php if ($isShowHomeInNavi): ?>
                         <a<?php if ($this->is('index')): ?> class="current" <?php endif; ?> href="<?php $this->options->siteUrl(); ?>"><?php _e('首页'); ?></a><?php endif; ?><?php
+                        $pagesMap = [];
+                        $allPagesList = [];
                         $this->widget('Widget_Contents_Page_List')->to($pages);
-                        if ($isShowAllSlugInNavi) {
-                            while ($pages->next()) {
-                                $isCurrent = "";
-                                if ($this->is('page', $pages->slug)) {
-                                    $isCurrent = 'class="current "';
-                                }
-                                echo '<a ' . $isCurrent . 'href=';
-                                $pages->permalink();
-                                echo ' title="';
-                                $pages->title();
-                                echo '">';
-                                $pages->title();
-                                echo '</a>';
-                            }
-                        } else {
-                            foreach ($slugInNavi as $slug) {
-                                while ($pages->next()) {
-                                    if ($pages->slug == $slug) {
-                                        $isCurrent = "";
-                                        if ($this->is('page', $pages->slug)) {
-                                            $isCurrent = 'class="current "';
-                                        }
-                                        echo '<a ' . $isCurrent . 'href=';
-                                        $pages->permalink();
-                                        echo ' title="';
-                                        $pages->title();
-                                        echo '">';
-                                        $pages->title();
-                                        echo '</a>';
-                                        continue;
+                        while ($pages->next()) {
+                            $pageData = [
+                                'title' => $pages->title,
+                                'permalink' => $pages->permalink,
+                                'slug' => $pages->slug
+                            ];
+                            $pagesMap[$pages->slug] = $pageData;
+                            $allPagesList[] = $pageData;
+                        }
+
+                        if (!empty($navigationItems)) {
+                            foreach ($navigationItems as $item) {
+                                $itemType = $item['type'] ?? 'page';
+                                $targetAttr = (!empty($item['target']) && $item['target'] === '_blank') ? ' target="_blank"' : '';
+                                if ($itemType === 'page') {
+                                    $slug = $item['slug'] ?? '';
+                                    if (isset($pagesMap[$slug])) {
+                                        $pageInfo = $pagesMap[$slug];
+                                        $displayTitle = !empty($item['title']) ? $item['title'] : $pageInfo['title'];
+                                        $isCurrent = $this->is('page', $slug) ? 'class="current" ' : '';
+                                        echo '<a ' . $isCurrent . 'href="' . $pageInfo['permalink'] . '" title="' . htmlspecialchars($displayTitle) . '"' . $targetAttr . '>' . htmlspecialchars($displayTitle) . '</a>';
+                                    }
+                                } elseif ($itemType === 'custom') {
+                                    $url = $item['url'] ?? '';
+                                    $title = !empty($item['title']) ? $item['title'] : $url;
+                                    if (!empty($url)) {
+                                        echo '<a href="' . htmlspecialchars($url) . '" title="' . htmlspecialchars($title) . '"' . $targetAttr . '>' . htmlspecialchars($title) . '</a>';
                                     }
                                 }
                             }
-                        }
-                        if (!empty(trim($customNavi))) {
-                            echo $customNavi;
+                        } else {
+                            if (!empty($slugInNavi)) {
+                                foreach ($slugInNavi as $slug) {
+                                    if (isset($pagesMap[$slug])) {
+                                        $pageInfo = $pagesMap[$slug];
+                                        $isCurrent = $this->is('page', $slug) ? 'class="current" ' : '';
+                                        echo '<a ' . $isCurrent . 'href="' . $pageInfo['permalink'] . '" title="' . htmlspecialchars($pageInfo['title']) . '">' . htmlspecialchars($pageInfo['title']) . '</a>';
+                                    }
+                                }
+                            } else {
+                                foreach ($allPagesList as $p) {
+                                    $isCurrent = $this->is('page', $p['slug']) ? 'class="current" ' : '';
+                                    echo '<a ' . $isCurrent . 'href="' . $p['permalink'] . '" title="' . htmlspecialchars($p['title']) . '">' . htmlspecialchars($p['title']) . '</a>';
+                                }
+                            }
+                            if (!empty(trim($customNavi))) {
+                                echo $customNavi;
+                            }
                         }
                         ?>
                 </p>

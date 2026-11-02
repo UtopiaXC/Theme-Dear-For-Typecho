@@ -1,0 +1,90 @@
+name: Release Theme
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Release Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Package theme
+        id: package
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          CLEAN_TAG=$(echo "${TAG_NAME}" | sed -E 's/^[vV]//')
+          echo "Packaging theme for tag: ${TAG_NAME} (clean: ${CLEAN_TAG})"
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "clean_tag=${CLEAN_TAG}" >> $GITHUB_OUTPUT
+
+          # Prepare temporary packaging directory with root directory name Dear-For-Typecho
+          mkdir -p "build/Dear-For-Typecho"
+          rsync -av \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.idea' \
+            --exclude='build' \
+            --exclude='dist' \
+            --exclude='.DS_Store' \
+            --exclude='demo' \
+            --exclude='release_note' \
+            ./ "build/Dear-For-Typecho/"
+
+          mkdir -p dist
+          ZIP_NAME="Dear-For-Typecho-${TAG_NAME}.zip"
+          cd build
+          zip -r "../dist/${ZIP_NAME}" Dear-For-Typecho
+          cd ..
+          echo "zip_path=dist/${ZIP_NAME}" >> $GITHUB_OUTPUT
+
+          # Find matching release note file in release_note directory
+          MATCHED_NOTE=""
+          if [ -f "release_note/${CLEAN_TAG}.md" ]; then
+            MATCHED_NOTE="release_note/${CLEAN_TAG}.md"
+          elif [ -f "release_note/v${CLEAN_TAG}.md" ]; then
+            MATCHED_NOTE="release_note/v${CLEAN_TAG}.md"
+          else
+            for f in release_note/*.md; do
+              if [ -f "$f" ]; then
+                base_name=$(basename "$f" .md)
+                clean_base=$(echo "$base_name" | sed -E 's/^[vV]//')
+                if [ "$clean_base" = "$CLEAN_TAG" ]; then
+                  MATCHED_NOTE="$f"
+                  break
+                fi
+              fi
+            done
+          fi
+
+          if [ -n "$MATCHED_NOTE" ] && [ -f "$MATCHED_NOTE" ]; then
+            echo "Found matching release note: ${MATCHED_NOTE}"
+            echo "body_path=${MATCHED_NOTE}" >> $GITHUB_OUTPUT
+          else
+            echo "No matching release note found for ${CLEAN_TAG}, will auto-generate notes."
+            echo "body_path=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release (With Release Note)
+        if: steps.package.outputs.body_path != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.package.outputs.tag_name }}
+          files: ${{ steps.package.outputs.zip_path }}
+          body_path: ${{ steps.package.outputs.body_path }}
+          generate_release_notes: false
+
+      - name: Create GitHub Release (Auto-generated Notes)
+        if: steps.package.outputs.body_path == ''
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.package.outputs.tag_name }}
+          files: ${{ steps.package.outputs.zip_path }}
+          generate_release_notes: true

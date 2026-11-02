@@ -36,7 +36,7 @@
 
     function createContainer(textarea) {
         var c = document.createElement("div");
-        c.style.cssText = "margin:10px 0;padding:15px;background:#f9f9f9;border-radius:8px;border:1px solid #e0e0e0;";
+        c.style.cssText = "margin:10px 0;box-sizing:border-box;";
         textarea.parentElement.insertBefore(c, textarea);
         textarea.style.display = "none";
         return c;
@@ -51,15 +51,15 @@
         return btn;
     }
 
-    var BTN_PRIMARY = "background:#467b96;color:#fff;border:none;border-radius:4px;padding:6px 16px;cursor:pointer;font-size:13px;";
-    var BTN_DANGER = "background:#e74c3c;color:#fff;border:none;border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;";
-    var BTN_SECONDARY = "background:#999;color:#fff;border:none;border-radius:4px;padding:6px 16px;cursor:pointer;font-size:13px;";
-    var BTN_SM_DANGER = "background:#e74c3c;color:#fff;border:none;border-radius:3px;padding:2px 8px;cursor:pointer;font-size:11px;";
-    var BTN_SM_PRIMARY = "background:#467b96;color:#fff;border:none;border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;";
-    var BTN_SM_SECONDARY = "background:#999;color:#fff;border:none;border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;";
-    var INPUT_S = "width:100%;padding:5px;border:1px solid #ccc;border-radius:4px;margin-top:2px;box-sizing:border-box;font-size:12px;";
-    var CARD_S = "background:#fff;border:1px solid #ddd;border-radius:6px;padding:14px;margin-bottom:12px;";
-    var SUBCARD_S = "background:#f5f5f5;border:1px solid #e0e0e0;border-radius:4px;padding:10px;margin-bottom:8px;";
+    var BTN_PRIMARY = "background:#467b96;color:#fff;border:none;border-radius:2px;padding:0 12px;height:28px;line-height:28px;cursor:pointer;font-size:13px;vertical-align:middle;";
+    var BTN_DANGER = "background:#b94a48;color:#fff;border:none;border-radius:2px;padding:0 12px;height:28px;line-height:28px;cursor:pointer;font-size:13px;vertical-align:middle;";
+    var BTN_SECONDARY = "background:#e9e9e6;color:#666;border:none;border-radius:2px;padding:0 12px;height:28px;line-height:28px;cursor:pointer;font-size:13px;vertical-align:middle;";
+    var BTN_SM_DANGER = "background:#b94a48;color:#fff;border:none;border-radius:2px;padding:0 8px;height:24px;line-height:24px;cursor:pointer;font-size:12px;vertical-align:middle;";
+    var BTN_SM_PRIMARY = "background:#467b96;color:#fff;border:none;border-radius:2px;padding:0 10px;height:24px;line-height:24px;cursor:pointer;font-size:12px;vertical-align:middle;";
+    var BTN_SM_SECONDARY = "background:#e9e9e6;color:#666;border:none;border-radius:2px;padding:0 10px;height:24px;line-height:24px;cursor:pointer;font-size:12px;vertical-align:middle;";
+    var INPUT_S = "width:100%;padding:4px 8px;border:1px solid #d9d9d6;background:#fff;border-radius:2px;margin-top:2px;box-sizing:border-box;font-size:13px;color:#444;height:28px;";
+    var CARD_S = "background:#fff;border:1px solid #d9d9d6;border-radius:2px;padding:12px 14px;margin-bottom:10px;";
+    var SUBCARD_S = "background:#fbfbf9;border:1px solid #eee;border-radius:2px;padding:8px 10px;margin-bottom:8px;";
 
     function badgePreviewHtml(badge) {
         var h = '<span style="display:inline-block;background:#333;color:#fff;padding:2px 6px;border-radius:3px 0 0 3px;font-size:11px;vertical-align:top;">' + esc(badge.label || "?") + '</span>';
@@ -122,7 +122,7 @@
                         '<label style="font-size:11px;color:#666;">ID<input type="text" data-gi="' + gi + '" data-bi="' + bi + '" data-key="id" value="' + esc(badge.id) + '" class="dear-bf" style="' + INPUT_S + '"></label>' +
                         '<label style="font-size:11px;color:#666;">标签<input type="text" data-gi="' + gi + '" data-bi="' + bi + '" data-key="label" value="' + esc(badge.label) + '" class="dear-bf" style="' + INPUT_S + '"></label>' +
                         '<label style="font-size:11px;color:#666;">值<input type="text" data-gi="' + gi + '" data-bi="' + bi + '" data-key="value" value="' + esc(badge.value) + '" class="dear-bf" style="' + INPUT_S + '"></label>' +
-                        '<label style="font-size:11px;color:#666;">颜色<div style="display:flex;gap:4px;margin-top:2px;"><input type="color" data-gi="' + gi + '" data-bi="' + bi + '" class="dear-bf-color" value="' + esc(badge.color || "#555555") + '" style="width:30px;height:28px;padding:0;border:1px solid #ccc;border-radius:4px;cursor:pointer;"><input type="text" data-gi="' + gi + '" data-bi="' + bi + '" data-key="color" value="' + esc(badge.color || "#555555") + '" class="dear-bf" style="flex:1;padding:5px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;font-size:12px;"></div></label>';
+                        '<label style="font-size:11px;color:#666;">颜色<div style="display:flex;gap:4px;margin-top:2px;"><input type="color" data-gi="' + gi + '" data-bi="' + bi + '" class="dear-bf-color" value="' + esc(badge.color || "#555555") + '" style="width:30px;height:28px;padding:0;border:1px solid #d9d9d6;border-radius:2px;cursor:pointer;"><input type="text" data-gi="' + gi + '" data-bi="' + bi + '" data-key="color" value="' + esc(badge.color || "#555555") + '" class="dear-bf" style="flex:1;padding:4px 8px;border:1px solid #d9d9d6;background:#fff;border-radius:2px;box-sizing:border-box;font-size:13px;height:28px;"></div></label>';
                     bCard.appendChild(bRow1);
 
                     var bRow2 = document.createElement("div");
@@ -267,13 +267,13 @@
                 if (group.hasMarks) {
                     // Custom Marks List Editor
                     var marksBox = document.createElement("div");
-                    marksBox.style.cssText = "padding:10px;background:#eef5fa;border:1px solid #d0e3f0;border-radius:4px;margin-bottom:8px;";
+                    marksBox.style.cssText = "padding:10px;background:#f6f6f3;border:1px solid #d9d9d6;border-radius:2px;margin-bottom:8px;";
                     marksBox.innerHTML = '<div style="font-size:12px;color:#333;margin-bottom:8px;font-weight:600;">许可标记配置列表</div>';
 
                     var marksList = group.marks || [];
                     marksList.forEach(function (mark, mi) {
                         var mCard = document.createElement("div");
-                        mCard.style.cssText = "display:flex;gap:6px;align-items:center;margin-bottom:6px;background:#fff;padding:6px 8px;border-radius:4px;border:1px solid #ccc;";
+                        mCard.style.cssText = "display:flex;gap:6px;align-items:center;margin-bottom:6px;background:#fff;padding:6px 8px;border-radius:2px;border:1px solid #d9d9d6;";
                         mCard.innerHTML =
                             '<label style="font-size:11px;color:#666;width:80px;">标记/ID<input type="text" data-gi="' + gi + '" data-mi="' + mi + '" data-key="text" value="' + esc(mark.text || mark.id) + '" class="dear-mf" style="' + INPUT_S + '"></label>' +
                             '<label style="font-size:11px;color:#666;flex:1;">提示 (Tooltip)<input type="text" data-gi="' + gi + '" data-mi="' + mi + '" data-key="tooltip" value="' + esc(mark.tooltip) + '" class="dear-mf" style="' + INPUT_S + '"></label>' +
@@ -454,7 +454,7 @@
             groups.forEach(function (group) {
                 if (!group.badges || !group.badges.length) return;
                 var gDiv = document.createElement("div");
-                gDiv.style.cssText = "margin-bottom:12px;padding:12px;background:#fff;border:1px solid #ddd;border-radius:6px;";
+                gDiv.style.cssText = "margin-bottom:10px;padding:10px 12px;background:#fff;border:1px solid #d9d9d6;border-radius:2px;";
                 var gTitle = document.createElement("div");
                 gTitle.style.cssText = "font-weight:600;margin-bottom:8px;font-size:14px;color:#333;";
                 gTitle.textContent = group.name + (group.mode === "single" ? " （单选）" : " （多选）");
@@ -465,7 +465,7 @@
                 group.badges.forEach(function (badge) {
                     var isChecked = selected.indexOf(badge.id) !== -1;
                     var lbl = document.createElement("label");
-                    lbl.style.cssText = "display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:5px 10px;border:2px solid " + (isChecked ? (badge.color || "#467b96") : "#e0e0e0") + ";border-radius:6px;font-size:13px;transition:all 0.15s;" + (isChecked ? "background:rgba(70,123,150,0.05);" : "");
+                    lbl.style.cssText = "display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:4px 8px;border:1px solid " + (isChecked ? (badge.color || "#467b96") : "#d9d9d6") + ";border-radius:2px;font-size:13px;transition:all 0.15s;" + (isChecked ? "background:rgba(70,123,150,0.05);" : "background:#fff;");
                     var inp = document.createElement("input");
                     inp.type = group.mode === "single" ? "radio" : "checkbox";
                     inp.name = "dear_sel_badge_" + group.id + "_" + container.id;
@@ -530,7 +530,7 @@
             // --- Content License Section ---
             if (contentGroups.length) {
                 var cDiv = document.createElement("div");
-                cDiv.style.cssText = "margin-bottom:12px;padding:12px;background:#fff;border:1px solid #ddd;border-radius:6px;";
+                cDiv.style.cssText = "margin-bottom:10px;padding:10px 12px;background:#fff;border:1px solid #d9d9d6;border-radius:2px;";
                 var cTitle = document.createElement("div");
                 cTitle.style.cssText = "font-weight:600;margin-bottom:8px;font-size:14px;color:#333;";
                 cTitle.textContent = "内容许可协议（单选）";
@@ -542,7 +542,7 @@
                 // Option: None / Clear
                 var isNoneChecked = !contentSel || !contentSel.type;
                 var noneLbl = document.createElement("label");
-                noneLbl.style.cssText = "display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:5px 10px;border:2px solid " + (isNoneChecked ? "#999" : "#e0e0e0") + ";border-radius:6px;font-size:13px;transition:all 0.15s;" + (isNoneChecked ? "background:#f0f0f0;" : "");
+                noneLbl.style.cssText = "display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:4px 8px;border:1px solid " + (isNoneChecked ? "#999" : "#d9d9d6") + ";border-radius:2px;font-size:13px;transition:all 0.15s;" + (isNoneChecked ? "background:#f0f0f0;" : "background:#fff;");
                 var noneInp = document.createElement("input");
                 noneInp.type = "radio";
                 noneInp.name = "dear_sel_content_" + container.id;
@@ -560,7 +560,7 @@
                 contentGroups.forEach(function (group) {
                     var isChecked = contentSel && contentSel.type === group.id;
                     var lbl = document.createElement("label");
-                    lbl.style.cssText = "display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:5px 10px;border:2px solid " + (isChecked ? "#467b96" : "#e0e0e0") + ";border-radius:6px;font-size:13px;transition:all 0.15s;" + (isChecked ? "background:rgba(70,123,150,0.05);" : "");
+                    lbl.style.cssText = "display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:4px 8px;border:1px solid " + (isChecked ? "#467b96" : "#d9d9d6") + ";border-radius:2px;font-size:13px;transition:all 0.15s;" + (isChecked ? "background:rgba(70,123,150,0.05);" : "background:#fff;");
                     var inp = document.createElement("input");
                     inp.type = "radio";
                     inp.name = "dear_sel_content_" + container.id;
@@ -590,7 +590,7 @@
                     contentGroups.forEach(function (g) { if (g.id === contentSel.type) activeGroup = g; });
                     if (activeGroup && activeGroup.hasMarks && activeGroup.marks && activeGroup.marks.length) {
                         var marksDiv = document.createElement("div");
-                        marksDiv.style.cssText = "padding:10px;background:#f0f7fb;border:1px solid #d0e3f0;border-radius:6px;";
+                        marksDiv.style.cssText = "padding:10px;background:#f6f6f3;border:1px solid #d9d9d6;border-radius:2px;";
                         var marksTitle = document.createElement("div");
                         marksTitle.style.cssText = "font-size:12px;color:#555;margin-bottom:8px;font-weight:600;";
                         marksTitle.textContent = "选择许可标记";
@@ -606,7 +606,7 @@
                             var isMarkChecked = currentMarks.indexOf(mVal) !== -1;
                             var isRequired = !!markDef.required;
                             var mLbl = document.createElement("label");
-                            mLbl.style.cssText = "display:inline-flex;align-items:center;gap:6px;cursor:" + (isRequired ? "not-allowed" : "pointer") + ";padding:5px 12px;border:2px solid " + (isMarkChecked ? "#467b96" : "#e0e0e0") + ";border-radius:6px;font-size:13px;transition:all 0.15s;" + (isMarkChecked ? "background:rgba(70,123,150,0.08);" : "");
+                            mLbl.style.cssText = "display:inline-flex;align-items:center;gap:6px;cursor:" + (isRequired ? "not-allowed" : "pointer") + ";padding:4px 8px;border:1px solid " + (isMarkChecked ? "#467b96" : "#d9d9d6") + ";border-radius:2px;font-size:13px;transition:all 0.15s;" + (isMarkChecked ? "background:rgba(70,123,150,0.08);" : "background:#fff;");
                             var mInp = document.createElement("input");
                             mInp.type = "checkbox";
                             mInp.value = mVal;
@@ -646,7 +646,7 @@
             // --- Code License Section ---
             if (codePresets.length) {
                 var codeDiv = document.createElement("div");
-                codeDiv.style.cssText = "margin-bottom:12px;padding:12px;background:#fff;border:1px solid #ddd;border-radius:6px;";
+                codeDiv.style.cssText = "margin-bottom:10px;padding:10px 12px;background:#fff;border:1px solid #d9d9d6;border-radius:2px;";
                 var codeTitle = document.createElement("div");
                 codeTitle.style.cssText = "font-weight:600;margin-bottom:8px;font-size:14px;color:#333;";
                 codeTitle.textContent = "代码许可协议（单选）";
@@ -658,7 +658,7 @@
                 // Option: None / Clear
                 var isCodeNoneChecked = !codeSel;
                 var codeNoneLbl = document.createElement("label");
-                codeNoneLbl.style.cssText = "display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:5px 10px;border:2px solid " + (isCodeNoneChecked ? "#999" : "#e0e0e0") + ";border-radius:6px;font-size:13px;transition:all 0.15s;" + (isCodeNoneChecked ? "background:#f0f0f0;" : "");
+                codeNoneLbl.style.cssText = "display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:4px 8px;border:1px solid " + (isCodeNoneChecked ? "#999" : "#d9d9d6") + ";border-radius:2px;font-size:13px;transition:all 0.15s;" + (isCodeNoneChecked ? "background:#f0f0f0;" : "background:#fff;");
                 var codeNoneInp = document.createElement("input");
                 codeNoneInp.type = "radio";
                 codeNoneInp.name = "dear_sel_code_" + container.id;
@@ -676,7 +676,7 @@
                 codePresets.forEach(function (preset) {
                     var isChecked = codeSel === preset.id;
                     var lbl = document.createElement("label");
-                    lbl.style.cssText = "display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:5px 10px;border:2px solid " + (isChecked ? "#467b96" : "#e0e0e0") + ";border-radius:6px;font-size:13px;transition:all 0.15s;" + (isChecked ? "background:rgba(70,123,150,0.05);" : "");
+                    lbl.style.cssText = "display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:4px 8px;border:1px solid " + (isChecked ? "#467b96" : "#d9d9d6") + ";border-radius:2px;font-size:13px;transition:all 0.15s;" + (isChecked ? "background:rgba(70,123,150,0.05);" : "background:#fff;");
                     var inp = document.createElement("input");
                     inp.type = "radio";
                     inp.name = "dear_sel_code_" + container.id;

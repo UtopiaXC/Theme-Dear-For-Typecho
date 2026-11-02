@@ -6,6 +6,11 @@ if (isset($_REQUEST['dear_ai_action'])) {
     require_once dirname(__FILE__) . '/asset/php/ai-summary-handler.php';
     DearTheme_AiSummary::handleRequest();
 }
+// 主题更新 AJAX 请求拦截
+require_once dirname(__FILE__) . '/asset/php/theme-updater.php';
+if (isset($_REQUEST['dear_update_action'])) {
+    DearTheme_Updater::handleRequest();
+}
 require_once dirname(__FILE__) . '/asset/php/article-footer-render.php';
 
 // 文章数设置
@@ -343,14 +348,91 @@ function themeConfig($form)
     $Dear_showHomeInNavi = new Typecho_Widget_Helper_Form_Element_Radio('Dear_showHomeInNavi', array('1' => _t('显示'), '0' => _t('隐藏')), '1', _t('面包屑是否包含首页按钮'), _t(''));
     $form->addInput($Dear_showHomeInNavi);
 
-    $Dear_showAllSlug = new Typecho_Widget_Helper_Form_Element_Radio('Dear_showAllSlug', array('1' => _t('是'), '0' => _t('否')), '1', _t('面包屑是否显示全部独立页面'), _t(''));
-    $form->addInput($Dear_showAllSlug);
+    // 面包屑导航配置
+    $db = Typecho_Db::get();
+    $systemPages = [];
+    try {
+        $pageRows = $db->fetchAll($db->select('title', 'slug', 'order')
+            ->from('table.contents')
+            ->where('type = ?', 'page')
+            ->where('status = ?', 'publish')
+            ->order('table.contents.order', Typecho_Db::SORT_ASC));
+        foreach ($pageRows as $pr) {
+            $systemPages[] = [
+                'title' => $pr['title'],
+                'slug' => $pr['slug']
+            ];
+        }
+    } catch (Exception $e) {
+    }
 
-    $Dear_slugInNavi = new Typecho_Widget_Helper_Form_Element_Text('Dear_slugInNavi', NULL, '', _t('手动补充呈现页面入口'), _t('如果你在上面关闭了显示全部独立页面，可手动在此填写要展示的缩略名集合。英文逗号分隔。如: about,links'));
+    $options = class_exists('Helper') ? Helper::options() : (class_exists('\Utils\Helper') ? \Utils\Helper::options() : \Typecho\Widget::widget('Widget_Options'));
+    $themeUrl = $options->themeUrl;
+    $defaultNaviItems = '[]';
+    $currentNavi = $options->Dear_navigationItems;
+    if (empty($currentNavi)) {
+        $legacySlugStr = $options->Dear_slugInNavi;
+        $legacyCustomHtml = $options->Dear_customNavi;
+        $migratedItems = [];
+        $pageTitlesMap = [];
+        foreach ($systemPages as $sp) {
+            $pageTitlesMap[$sp['slug']] = $sp['title'];
+        }
+        if (!empty(trim($legacySlugStr ?? ''))) {
+            $slugs = array_map('trim', explode(',', $legacySlugStr));
+            foreach ($slugs as $s) {
+                if ($s !== '') {
+                    $migratedItems[] = [
+                        'type' => 'page',
+                        'slug' => $s,
+                        'title' => $pageTitlesMap[$s] ?? $s,
+                        'target' => '_self'
+                    ];
+                }
+            }
+        }
+        if (!empty(trim($legacyCustomHtml ?? ''))) {
+            if (preg_match_all('/<a\s+[^>]*href=["\']([^"\']*)["\'][^>]*>(.*?)<\/a>/is', $legacyCustomHtml, $matches, PREG_SET_ORDER)) {
+                foreach ($matches as $m) {
+                    $target = (stripos($m[0], 'target="_blank"') !== false || stripos($m[0], "target='_blank'") !== false) ? '_blank' : '_self';
+                    $migratedItems[] = [
+                        'type' => 'custom',
+                        'title' => strip_tags($m[2]),
+                        'url' => $m[1],
+                        'target' => $target
+                    ];
+                }
+            }
+        }
+        if (!empty($migratedItems)) {
+            $defaultNaviItems = json_encode($migratedItems, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        }
+    }
+
+    $Dear_navigationItems = new Typecho_Widget_Helper_Form_Element_Textarea(
+        'Dear_navigationItems',
+        NULL,
+        $defaultNaviItems,
+        _t('面包屑导航项'),
+        _t('选取要呈现的系统独立页面或添加自定义链接')
+    );
+    $form->addInput($Dear_navigationItems);
+
+    $Dear_slugInNavi = new Typecho_Widget_Helper_Form_Element_Hidden('Dear_slugInNavi');
     $form->addInput($Dear_slugInNavi);
 
-    $Dear_customNavi = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_customNavi', NULL, '', _t('自定义导航链接'), _t('在这里填入自定义的一个或多个&lt;a&gt;标签，渲染时将直接按照原样输出到导航栏的末尾。'));
+    $Dear_customNavi = new Typecho_Widget_Helper_Form_Element_Hidden('Dear_customNavi');
     $form->addInput($Dear_customNavi);
+
+    $Dear_naviAdminUi = new Typecho_Widget_Helper_Layout('div');
+    $Dear_naviAdminUi->html('
+    <link rel="stylesheet" href="' . $themeUrl . '/asset/css/navi-admin.css">
+    <script>
+    window.DearSystemPages = ' . json_encode($systemPages, JSON_UNESCAPED_UNICODE) . ';
+    </script>
+    <script src="' . $themeUrl . '/asset/js/navi-admin.js"></script>
+    ');
+    $form->addItem($Dear_naviAdminUi);
 
     $Dear_lightbox = new Typecho_Widget_Helper_Form_Element_Radio('Dear_lightbox', array('1' => _t('启用'), '0' => _t('关闭')), '1', _t('<div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 35px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">阅读体验</div>启用图片灯箱特效'), _t('开启后文章内的图片点击可放大。会自动引入Viewerjs，略微增加网页加载时间'));
     $form->addInput($Dear_lightbox);
@@ -463,6 +545,60 @@ function themeConfig($form)
 
     $Dear_customJs = new Typecho_Widget_Helper_Form_Element_Textarea('Dear_customJs', NULL, '', _t('自定义JS'), _t('在这里填入自定义JS代码（如访问统计等），直接写入JS即可，主题会自动加上&lt;script&gt;标签'));
     $form->addInput($Dear_customJs);
+
+    // 主题更新
+    $currentThemeVersion = DearTheme_Updater::getVersion();
+    $Dear_updateUi = new Typecho_Widget_Helper_Layout('div');
+    $Dear_updateUi->html('
+    <link rel="stylesheet" href="' . Helper::options()->themeUrl . '/asset/css/theme-update.css">
+    <div class="dear-group-title" style="font-size: 20px; font-weight: bold; color: #333; margin-top: 35px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #eee;">更新</div>
+    <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-s primary" id="dear-check-update-btn">检查更新</button>
+        <span style="font-size: 13px; color: #666;">当前版本：<strong>v' . htmlspecialchars($currentThemeVersion) . '</strong></span>
+        <span id="dear-check-update-status" style="font-size: 13px; color: #666;"></span>
+    </div>
+
+    <!-- 更新通知模态框 -->
+    <div id="dear-update-modal-overlay" class="dear-update-modal-overlay" style="display:none;">
+        <div class="dear-update-modal-card">
+            <div class="dear-update-modal-header">
+                <span class="dear-update-modal-title">发现新版本</span>
+                <button type="button" class="dear-update-modal-close" id="dear-update-modal-close">&times;</button>
+            </div>
+            <div class="dear-update-modal-body">
+                <div class="dear-update-version-row">
+                    <span class="dear-update-badge dear-update-badge-old" id="dear-update-old-badge">当前版本: v' . htmlspecialchars($currentThemeVersion) . '</span>
+                    <span class="dear-update-arrow">➔</span>
+                    <span class="dear-update-badge dear-update-badge-new" id="dear-update-new-badge">最新版本: </span>
+                </div>
+                <div class="dear-update-release-title" id="dear-update-release-title"></div>
+                <div class="dear-update-release-date" id="dear-update-release-date"></div>
+                <div class="dear-update-section-label">更新内容：</div>
+                <div class="dear-update-changelog" id="dear-update-changelog"></div>
+                <div class="dear-update-tip">
+                    提示：点击更新后将自动下载并覆盖主题文件。若您曾手动修改过主题核心代码，请在更新前做好备份。
+                </div>
+                <div id="dear-update-progress-area" style="display:none; margin-top: 14px;">
+                    <div class="dear-update-status-text" id="dear-update-status-text"></div>
+                </div>
+            </div>
+            <div class="dear-update-modal-footer">
+                <button type="button" class="btn btn-s" id="dear-update-btn-cancel">取消</button>
+                <button type="button" class="btn btn-s primary" id="dear-update-btn-confirm">立即更新</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="' . Helper::options()->themeUrl . '/asset/js/marked.min.js"></script>
+    <script>
+    window.DearUpdateConfig = {
+        currentVersion: "' . addslashes($currentThemeVersion) . '",
+        ajaxUrl: "' . addslashes(Helper::options()->index) . '"
+    };
+    </script>
+    <script src="' . Helper::options()->themeUrl . '/asset/js/theme-update.js"></script>
+    ');
+    $form->addItem($Dear_updateUi);
 
     // 配置备份与恢复
     $Dear_backupUi = new Typecho_Widget_Helper_Layout('div');
