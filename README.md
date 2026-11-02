@@ -43,8 +43,6 @@
 
 
 # 开源与鸣谢
-评论功能UI大范围借鉴[Story-for-Typecho
-](https://github.com/txperl/Story-for-Typecho)主题，在此表示十分感谢。同时本项目也将也遵守其开源许可。
 
 自动检测渲染LaTeX功能参考文章《[为 Typecho 增加 LaTeX 公式的渲染](https://nwdan.com/tutorials/typecho-latex-support.html)》
 
